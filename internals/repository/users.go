@@ -75,7 +75,6 @@ func NewRepository() *UserRepository {
 	options.SetMaxPoolSize(100)
 	options.ApplyURI(fmt.Sprintf("%s", mongoURI))
 	defer cancel()
-	// todo Dont push this
 	client, err := mongo.Connect(ctx, options)
 	repo.client = client
 	if err != nil {
