@@ -10,11 +10,13 @@ import (
 	"io"
 	"log"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/coocood/freecache"
 	"github.com/gabivlj/chat-it/internals/domain"
 	"github.com/joho/godotenv"
+	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
@@ -86,9 +88,23 @@ func NewRepository() *UserRepository {
 
 // SaveUser saves a user into mongo db
 func (u *UserRepository) SaveUser(ctx context.Context, user *domain.User) (*domain.User, error) {
-	// todo Handle error
-	encryptedPass, _ := bcrypt.GenerateFromPassword([]byte(user.Password), 14)
 	mongoU := mongoUser(user)
+	// Sanitize inputs
+	usr := u.userCollection.FindOne(ctx, mongoU)
+	if usr.Err() == nil {
+		return nil, fmt.Errorf("Error, the user already exists")
+	}
+	user.Username = strings.TrimSpace(user.Username)
+	if len(user.Username) < 2 || len(user.Username) > 16 {
+		return nil, fmt.Errorf("Username must be more than 1 character or less than 17")
+	}
+	if len(user.Password) < 6 || len(user.Password) >= 60 {
+		return nil, fmt.Errorf("Error, password length must be more than 5 characters or less than 60")
+	}
+	encryptedPass, err := bcrypt.GenerateFromPassword([]byte(user.Password), 14)
+	if err != nil {
+		return nil, err
+	}
 	mongoU.Password = string(encryptedPass)
 	result, err := u.userCollection.InsertOne(ctx, mongoU)
 	if err != nil {
@@ -165,6 +181,24 @@ func (u *UserRepository) VerifySession(session string) (*domain.User, error) {
 		return nil, err
 	}
 	return userData, err
+}
+
+// FindByIDs finds users by ids (we will use this for data loaden)
+func (u *UserRepository) FindByIDs(ctx context.Context, ids []string) ([]*domain.User, error) {
+	cursor, err := u.userCollection.Find(ctx, bson.M{"_id": bson.M{"$in": getObjectIDs(ids)}})
+	if err != nil {
+		return nil, err
+	}
+	users := []userMongo{}
+	err = cursor.All(ctx, &users)
+	if err != nil {
+		return nil, err
+	}
+	usersRef := make([]*domain.User, len(users))
+	for i := range users {
+		usersRef[i] = users[i].Domain()
+	}
+	return usersRef, nil
 }
 
 func newSessionID() string {

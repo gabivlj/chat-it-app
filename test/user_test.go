@@ -10,12 +10,33 @@ import (
 	"github.com/gabivlj/chat-it/internals/repository"
 )
 
+func BenchmarkFindByIDs(b *testing.B) {
+	const iterations = 1
+	if b.N > iterations {
+		return
+	}
+	userRep := repository.NewRepository()
+	users, err := userRep.FindByIDs(context.TODO(), []string{"5ecff485476916b6cc2d180f", "5ecff4b7fac656a1633f04f7"})
+	if err != nil {
+		b.Error(err)
+		b.FailNow()
+	}
+
+	for _, user := range users {
+		b.Log(*user)
+	}
+}
+
 func BenchmarkRegister(b *testing.B) {
+	// If it is the second time running or more, return.
+	if b.N > 1 {
+		return
+	}
 	b.StopTimer()
 	userRep := repository.NewRepository()
 	defer userRep.Disconnect(context.TODO())
 	b.StartTimer()
-	user, err := userRep.SaveUser(context.TODO(), &domain.User{Username: "gabivlj02", Password: "123456"})
+	user, err := userRep.SaveUser(context.TODO(), &domain.User{Username: "gabivlj053", Password: "123456"})
 	if err != nil {
 		b.Error(err)
 		b.FailNow()
