@@ -32,10 +32,8 @@ func BenchmarkRegister(b *testing.B) {
 	if b.N > benchmarkIterations {
 		return
 	}
-	b.StopTimer()
 	userRep := repository.NewRepository()
 	defer userRep.Disconnect(context.TODO())
-	b.StartTimer()
 	user, err := userRep.SaveUser(context.TODO(), &domain.User{Username: "gabivlj053", Password: "123456"})
 	if err != nil {
 		b.Error(err)
