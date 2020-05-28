@@ -1,0 +1,53 @@
+type User {
+  id: ID!
+  username: String!
+  posts: [Post!]!
+  profileImage: Image
+}
+
+type Post {
+  user: User!
+  id: ID!
+  image: Image
+  chat: [Message!]!
+  title: String!
+  text: String!
+  createdAt: Int!
+}
+
+type Message {
+  id: ID!
+  createdAt: Int!
+  text: String!
+  user: User!
+  post: Post!
+}
+
+type Image {
+  urlXL: String!
+  urlMD: String!
+  urlSM: String!
+  post: Post
+  user: User
+}
+
+input Params {
+  before: Int
+  after: Int
+  limit: Int
+}
+
+input UserQuery {
+  username: String
+  id: ID
+}
+
+type Query {
+  image(id: ID!): Image!
+  imageFromObject(objectID: ID!): Image!
+  messagesPost(id: ID!, params: Params): [Message!]!
+  postsUser(id: ID!, params: Params): [Post!]!
+  user(id: UserQuery!): User!
+  users: [User!]!
+  posts(params: Params): [Post!]!
+}
