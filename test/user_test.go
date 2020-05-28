@@ -4,18 +4,18 @@ import (
 	"context"
 	"log"
 	"testing"
-	"time"
 
 	"github.com/gabivlj/chat-it/internals/domain"
 	"github.com/gabivlj/chat-it/internals/repository"
 )
 
 func BenchmarkFindByIDs(b *testing.B) {
-	const iterations = 1
-	if b.N > iterations {
+	const benchmarkIterations = 1
+	if b.N > benchmarkIterations {
 		return
 	}
 	userRep := repository.NewRepository()
+	defer userRep.Disconnect(context.TODO())
 	users, err := userRep.FindByIDs(context.TODO(), []string{"5ecff485476916b6cc2d180f", "5ecff4b7fac656a1633f04f7"})
 	if err != nil {
 		b.Error(err)
@@ -28,8 +28,8 @@ func BenchmarkFindByIDs(b *testing.B) {
 }
 
 func BenchmarkRegister(b *testing.B) {
-	// If it is the second time running or more, return.
-	if b.N > 1 {
+	const benchmarkIterations = 1
+	if b.N > benchmarkIterations {
 		return
 	}
 	b.StopTimer()
@@ -45,10 +45,8 @@ func BenchmarkRegister(b *testing.B) {
 }
 
 func BenchmarkUserLog(b *testing.B) {
-	b.StopTimer()
 	userRep := repository.NewRepository()
 	defer userRep.Disconnect(context.TODO())
-	b.StartTimer()
 	user, err := userRep.FindByID(context.TODO(), "5ecff485476916b6cc2d180f")
 	if err != nil {
 		b.Error(err)
@@ -58,18 +56,13 @@ func BenchmarkUserLog(b *testing.B) {
 		b.Errorf("ERROR, ids don't match")
 		b.FailNow()
 	}
-
 	b.Log(user)
 }
 
 func BenchmarkUserLogIn(b *testing.B) {
-	timeNow := time.Now().Unix()
 	userRep := repository.NewRepository()
 	defer userRep.Disconnect(context.TODO())
-	log.Println(time.Now().Unix() - timeNow)
-	timeNow = time.Now().Unix()
 	user, session, err := userRep.LogUser(context.TODO(), &domain.User{Password: "123456", Username: "gabivlj02"})
-	log.Println(time.Now().Unix() - timeNow)
 	if err != nil {
 		b.Error(err)
 		b.FailNow()
