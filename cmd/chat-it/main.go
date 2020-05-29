@@ -11,6 +11,7 @@ import (
 	"github.com/99designs/gqlgen/graphql/playground"
 	"github.com/gabivlj/chat-it/internals/graphql"
 	"github.com/gabivlj/chat-it/internals/graphql/generated"
+	"github.com/gabivlj/chat-it/internals/repository"
 	"github.com/gorilla/websocket"
 )
 
@@ -24,7 +25,7 @@ func main() {
 	if port == "" {
 		port = defaultPort
 	}
-	graphqlHandler := generated.NewExecutableSchema(generated.Config{Resolvers: &graphql.Resolver{}})
+	graphqlHandler := generated.NewExecutableSchema(generated.Config{Resolvers: graphql.New(repository.NewRepository())})
 	srv := handler.NewDefaultServer(graphqlHandler)
 	srv.AddTransport(transport.Websocket{
 		KeepAlivePingInterval: 10 * time.Second,

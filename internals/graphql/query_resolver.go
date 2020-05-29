@@ -2,6 +2,7 @@ package graphql
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	"github.com/gabivlj/chat-it/internals/domain"
@@ -13,7 +14,13 @@ func (r *queryResolver) Users(ctx context.Context) ([]*domain.User, error) {
 }
 
 func (r *queryResolver) User(ctx context.Context, id model.UserQuery) (*domain.User, error) {
-	return &domain.User{Username: "mmm", ID: "SDSD"}, nil
+	if id.ID != nil {
+		return r.userRepo.FindByID(ctx, *id.ID)
+	}
+	if id.Username == nil {
+		return nil, errors.New("Username or ID params need to be filled")
+	}
+	return r.userRepo.FindByUsername(ctx, *id.Username)
 }
 
 func (r *queryResolver) Image(ctx context.Context, id string) (*domain.Image, error) {

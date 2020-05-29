@@ -2,6 +2,15 @@
 
 package model
 
+import (
+	"github.com/gabivlj/chat-it/internals/domain"
+)
+
+type FormLogInRegister struct {
+	Username string `json:"username"`
+	Password string `json:"password"`
+}
+
 type Params struct {
 	Before *int `json:"before"`
 	After  *int `json:"after"`
@@ -11,4 +20,9 @@ type Params struct {
 type UserQuery struct {
 	Username *string `json:"username"`
 	ID       *string `json:"id"`
+}
+
+type UserSession struct {
+	User    *domain.User `json:"user"`
+	Session string       `json:"session"`
 }

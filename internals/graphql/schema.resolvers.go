@@ -17,6 +17,9 @@ func (r *Resolver) Image() generated1.ImageResolver { return &imageResolver{r} }
 // Message returns generated1.MessageResolver implementation.
 func (r *Resolver) Message() generated1.MessageResolver { return &messageResolver{r} }
 
+// Mutation returns generated1.MutationResolver implementation.
+func (r *Resolver) Mutation() generated1.MutationResolver { return &mutationResolver{r} }
+
 // Post returns generated1.PostResolver implementation.
 func (r *Resolver) Post() generated1.PostResolver { return &postResolver{r} }
 
@@ -28,6 +31,7 @@ func (r *Resolver) User() generated1.UserResolver { return &userResolver{r} }
 
 type imageResolver struct{ *Resolver }
 type messageResolver struct{ *Resolver }
+type mutationResolver struct{ *Resolver }
 type postResolver struct{ *Resolver }
 type queryResolver struct{ *Resolver }
 type userResolver struct{ *Resolver }

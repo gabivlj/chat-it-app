@@ -34,7 +34,7 @@ func BenchmarkRegister(b *testing.B) {
 	}
 	userRep := repository.NewRepository()
 	defer userRep.Disconnect(context.TODO())
-	user, err := userRep.SaveUser(context.TODO(), &domain.User{Username: "gabivlj053", Password: "123456"})
+	user, _, err := userRep.SaveUser(context.TODO(), &domain.User{Username: "gabivlj053", Password: "123456"})
 	if err != nil {
 		b.Error(err)
 		b.FailNow()

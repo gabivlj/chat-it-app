@@ -51,3 +51,18 @@ type Query {
   users: [User!]!
   posts(params: Params): [Post!]!
 }
+
+input FormLogInRegister {
+  username: String!
+  password: String!
+}
+
+type UserSession {
+  user: User!
+  session: String!
+}
+
+type Mutation {
+  newUser(parameters: FormLogInRegister): UserSession!
+  logUser(parameters: FormLogInRegister): UserSession!
+}

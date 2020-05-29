@@ -38,6 +38,7 @@ type Config struct {
 type ResolverRoot interface {
 	Image() ImageResolver
 	Message() MessageResolver
+	Mutation() MutationResolver
 	Post() PostResolver
 	Query() QueryResolver
 	User() UserResolver
@@ -61,6 +62,11 @@ type ComplexityRoot struct {
 		Post      func(childComplexity int) int
 		Text      func(childComplexity int) int
 		User      func(childComplexity int) int
+	}
+
+	Mutation struct {
+		LogUser func(childComplexity int, parameters *model.FormLogInRegister) int
+		NewUser func(childComplexity int, parameters *model.FormLogInRegister) int
 	}
 
 	Post struct {
@@ -89,6 +95,11 @@ type ComplexityRoot struct {
 		ProfileImage func(childComplexity int) int
 		Username     func(childComplexity int) int
 	}
+
+	UserSession struct {
+		Session func(childComplexity int) int
+		User    func(childComplexity int) int
+	}
 }
 
 type ImageResolver interface {
@@ -98,6 +109,10 @@ type ImageResolver interface {
 type MessageResolver interface {
 	User(ctx context.Context, obj *domain.Message) (*domain.User, error)
 	Post(ctx context.Context, obj *domain.Message) (*domain.Post, error)
+}
+type MutationResolver interface {
+	NewUser(ctx context.Context, parameters *model.FormLogInRegister) (*model.UserSession, error)
+	LogUser(ctx context.Context, parameters *model.FormLogInRegister) (*model.UserSession, error)
 }
 type PostResolver interface {
 	User(ctx context.Context, obj *domain.Post) (*domain.User, error)
@@ -203,6 +218,30 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Message.User(childComplexity), true
+
+	case "Mutation.logUser":
+		if e.complexity.Mutation.LogUser == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_logUser_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.LogUser(childComplexity, args["parameters"].(*model.FormLogInRegister)), true
+
+	case "Mutation.newUser":
+		if e.complexity.Mutation.NewUser == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_newUser_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.NewUser(childComplexity, args["parameters"].(*model.FormLogInRegister)), true
 
 	case "Post.chat":
 		if e.complexity.Post.Chat == nil {
@@ -360,6 +399,20 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.User.Username(childComplexity), true
 
+	case "UserSession.session":
+		if e.complexity.UserSession.Session == nil {
+			break
+		}
+
+		return e.complexity.UserSession.Session(childComplexity), true
+
+	case "UserSession.user":
+		if e.complexity.UserSession.User == nil {
+			break
+		}
+
+		return e.complexity.UserSession.User(childComplexity), true
+
 	}
 	return 0, false
 }
@@ -377,6 +430,20 @@ func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
 			}
 			first = false
 			data := ec._Query(ctx, rc.Operation.SelectionSet)
+			var buf bytes.Buffer
+			data.MarshalGQL(&buf)
+
+			return &graphql.Response{
+				Data: buf.Bytes(),
+			}
+		}
+	case ast.Mutation:
+		return func(ctx context.Context) *graphql.Response {
+			if !first {
+				return nil
+			}
+			first = false
+			data := ec._Mutation(ctx, rc.Operation.SelectionSet)
 			var buf bytes.Buffer
 			data.MarshalGQL(&buf)
 
@@ -463,6 +530,21 @@ type Query {
   users: [User!]!
   posts(params: Params): [Post!]!
 }
+
+input FormLogInRegister {
+  username: String!
+  password: String!
+}
+
+type UserSession {
+  user: User!
+  session: String!
+}
+
+type Mutation {
+  newUser(parameters: FormLogInRegister): UserSession!
+  logUser(parameters: FormLogInRegister): UserSession!
+}
 `, BuiltIn: false},
 }
 var parsedSchema = gqlparser.MustLoadSchema(sources...)
@@ -470,6 +552,34 @@ var parsedSchema = gqlparser.MustLoadSchema(sources...)
 // endregion ************************** generated!.gotpl **************************
 
 // region    ***************************** args.gotpl *****************************
+
+func (ec *executionContext) field_Mutation_logUser_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 *model.FormLogInRegister
+	if tmp, ok := rawArgs["parameters"]; ok {
+		arg0, err = ec.unmarshalOFormLogInRegister2ᚖgithubᚗcomᚋgabivljᚋchatᚑitᚋinternalsᚋgraphqlᚋmodelᚐFormLogInRegister(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["parameters"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Mutation_newUser_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 *model.FormLogInRegister
+	if tmp, ok := rawArgs["parameters"]; ok {
+		arg0, err = ec.unmarshalOFormLogInRegister2ᚖgithubᚗcomᚋgabivljᚋchatᚑitᚋinternalsᚋgraphqlᚋmodelᚐFormLogInRegister(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["parameters"] = arg0
+	return args, nil
+}
 
 func (ec *executionContext) field_Query___type_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
@@ -953,6 +1063,88 @@ func (ec *executionContext) _Message_post(ctx context.Context, field graphql.Col
 	res := resTmp.(*domain.Post)
 	fc.Result = res
 	return ec.marshalNPost2ᚖgithubᚗcomᚋgabivljᚋchatᚑitᚋinternalsᚋdomainᚐPost(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Mutation_newUser(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Mutation",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Mutation_newUser_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	fc.Args = args
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().NewUser(rctx, args["parameters"].(*model.FormLogInRegister))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*model.UserSession)
+	fc.Result = res
+	return ec.marshalNUserSession2ᚖgithubᚗcomᚋgabivljᚋchatᚑitᚋinternalsᚋgraphqlᚋmodelᚐUserSession(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Mutation_logUser(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Mutation",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Mutation_logUser_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	fc.Args = args
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().LogUser(rctx, args["parameters"].(*model.FormLogInRegister))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*model.UserSession)
+	fc.Result = res
+	return ec.marshalNUserSession2ᚖgithubᚗcomᚋgabivljᚋchatᚑitᚋinternalsᚋgraphqlᚋmodelᚐUserSession(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Post_user(ctx context.Context, field graphql.CollectedField, obj *domain.Post) (ret graphql.Marshaler) {
@@ -1670,6 +1862,74 @@ func (ec *executionContext) _User_profileImage(ctx context.Context, field graphq
 	res := resTmp.(*domain.Image)
 	fc.Result = res
 	return ec.marshalOImage2ᚖgithubᚗcomᚋgabivljᚋchatᚑitᚋinternalsᚋdomainᚐImage(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _UserSession_user(ctx context.Context, field graphql.CollectedField, obj *model.UserSession) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "UserSession",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.User, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*domain.User)
+	fc.Result = res
+	return ec.marshalNUser2ᚖgithubᚗcomᚋgabivljᚋchatᚑitᚋinternalsᚋdomainᚐUser(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _UserSession_session(ctx context.Context, field graphql.CollectedField, obj *model.UserSession) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "UserSession",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Session, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) ___Directive_name(ctx context.Context, field graphql.CollectedField, obj *introspection.Directive) (ret graphql.Marshaler) {
@@ -2727,6 +2987,30 @@ func (ec *executionContext) ___Type_ofType(ctx context.Context, field graphql.Co
 
 // region    **************************** input.gotpl *****************************
 
+func (ec *executionContext) unmarshalInputFormLogInRegister(ctx context.Context, obj interface{}) (model.FormLogInRegister, error) {
+	var it model.FormLogInRegister
+	var asMap = obj.(map[string]interface{})
+
+	for k, v := range asMap {
+		switch k {
+		case "username":
+			var err error
+			it.Username, err = ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "password":
+			var err error
+			it.Password, err = ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		}
+	}
+
+	return it, nil
+}
+
 func (ec *executionContext) unmarshalInputParams(ctx context.Context, obj interface{}) (model.Params, error) {
 	var it model.Params
 	var asMap = obj.(map[string]interface{})
@@ -2902,6 +3186,42 @@ func (ec *executionContext) _Message(ctx context.Context, sel ast.SelectionSet, 
 				}
 				return res
 			})
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
+var mutationImplementors = []string{"Mutation"}
+
+func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, mutationImplementors)
+
+	ctx = graphql.WithFieldContext(ctx, &graphql.FieldContext{
+		Object: "Mutation",
+	})
+
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("Mutation")
+		case "newUser":
+			out.Values[i] = ec._Mutation_newUser(ctx, field)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "logUser":
+			out.Values[i] = ec._Mutation_logUser(ctx, field)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -3168,6 +3488,38 @@ func (ec *executionContext) _User(ctx context.Context, sel ast.SelectionSet, obj
 				res = ec._User_profileImage(ctx, field, obj)
 				return res
 			})
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
+var userSessionImplementors = []string{"UserSession"}
+
+func (ec *executionContext) _UserSession(ctx context.Context, sel ast.SelectionSet, obj *model.UserSession) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, userSessionImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("UserSession")
+		case "user":
+			out.Values[i] = ec._UserSession_user(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "session":
+			out.Values[i] = ec._UserSession_session(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -3651,6 +4003,20 @@ func (ec *executionContext) unmarshalNUserQuery2githubᚗcomᚋgabivljᚋchatᚑ
 	return ec.unmarshalInputUserQuery(ctx, v)
 }
 
+func (ec *executionContext) marshalNUserSession2githubᚗcomᚋgabivljᚋchatᚑitᚋinternalsᚋgraphqlᚋmodelᚐUserSession(ctx context.Context, sel ast.SelectionSet, v model.UserSession) graphql.Marshaler {
+	return ec._UserSession(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNUserSession2ᚖgithubᚗcomᚋgabivljᚋchatᚑitᚋinternalsᚋgraphqlᚋmodelᚐUserSession(ctx context.Context, sel ast.SelectionSet, v *model.UserSession) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	return ec._UserSession(ctx, sel, v)
+}
+
 func (ec *executionContext) marshalN__Directive2githubᚗcomᚋ99designsᚋgqlgenᚋgraphqlᚋintrospectionᚐDirective(ctx context.Context, sel ast.SelectionSet, v introspection.Directive) graphql.Marshaler {
 	return ec.___Directive(ctx, sel, &v)
 }
@@ -3898,6 +4264,18 @@ func (ec *executionContext) marshalOBoolean2ᚖbool(ctx context.Context, sel ast
 		return graphql.Null
 	}
 	return ec.marshalOBoolean2bool(ctx, sel, *v)
+}
+
+func (ec *executionContext) unmarshalOFormLogInRegister2githubᚗcomᚋgabivljᚋchatᚑitᚋinternalsᚋgraphqlᚋmodelᚐFormLogInRegister(ctx context.Context, v interface{}) (model.FormLogInRegister, error) {
+	return ec.unmarshalInputFormLogInRegister(ctx, v)
+}
+
+func (ec *executionContext) unmarshalOFormLogInRegister2ᚖgithubᚗcomᚋgabivljᚋchatᚑitᚋinternalsᚋgraphqlᚋmodelᚐFormLogInRegister(ctx context.Context, v interface{}) (*model.FormLogInRegister, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := ec.unmarshalOFormLogInRegister2githubᚗcomᚋgabivljᚋchatᚑitᚋinternalsᚋgraphqlᚋmodelᚐFormLogInRegister(ctx, v)
+	return &res, err
 }
 
 func (ec *executionContext) unmarshalOID2string(ctx context.Context, v interface{}) (string, error) {

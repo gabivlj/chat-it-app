@@ -15,6 +15,7 @@ import (
 
 	"github.com/coocood/freecache"
 	"github.com/gabivlj/chat-it/internals/domain"
+	"github.com/gabivlj/chat-it/internals/services"
 	"github.com/joho/godotenv"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
@@ -60,7 +61,7 @@ func (u *userMongo) Domain() *domain.User {
 }
 
 // NewRepository returns users repo
-func NewRepository() *UserRepository {
+func NewRepository() services.UserService {
 	err := godotenv.Load()
 	if err != nil {
 		panic(err)
@@ -86,32 +87,36 @@ func NewRepository() *UserRepository {
 }
 
 // SaveUser saves a user into mongo db
-func (u *UserRepository) SaveUser(ctx context.Context, user *domain.User) (*domain.User, error) {
+func (u *UserRepository) SaveUser(ctx context.Context, user *domain.User) (*domain.User, string, error) {
 	mongoU := mongoUser(user)
 	// Sanitize inputs
 	usr := u.userCollection.FindOne(ctx, mongoU)
 	if usr.Err() == nil {
-		return nil, fmt.Errorf("Error, the user already exists")
+		return nil, "", fmt.Errorf("Error, the user already exists")
 	}
 	user.Username = strings.TrimSpace(user.Username)
 	if len(user.Username) < 2 || len(user.Username) > 16 {
-		return nil, fmt.Errorf("Username must be more than 1 character or less than 17")
+		return nil, "", fmt.Errorf("Username must be more than 1 character or less than 17")
 	}
 	if len(user.Password) < 6 || len(user.Password) >= 60 {
-		return nil, fmt.Errorf("Error, password length must be more than 5 characters or less than 60")
+		return nil, "", fmt.Errorf("Error, password length must be more than 5 characters or less than 60")
 	}
 	encryptedPass, err := bcrypt.GenerateFromPassword([]byte(user.Password), 14)
 	if err != nil {
-		return nil, err
+		return nil, "", err
 	}
 	mongoU.Password = string(encryptedPass)
 	result, err := u.userCollection.InsertOne(ctx, mongoU)
 	if err != nil {
-		return nil, err
+		return nil, "", err
 	}
 	id := result.InsertedID.(primitive.ObjectID)
 	mongoU.ID = id
-	return mongoU.Domain(), nil
+	userEnd := mongoU.Domain()
+	bytes, _ := json.Marshal(userEnd)
+	sessionID := newSessionID()
+	u.sessions.Set([]byte(sessionID), bytes, 10000*60*60)
+	return mongoU.Domain(), sessionID, nil
 }
 
 // LogUser logs an user from the db and creates a session
