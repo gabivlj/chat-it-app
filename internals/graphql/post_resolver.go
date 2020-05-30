@@ -14,7 +14,7 @@ func (r *postResolver) User(ctx context.Context, obj *domain.Post) (*domain.User
 
 // TODO dataLoader for objectIDs
 func (r *postResolver) Image(ctx context.Context, obj *domain.Post) (*domain.Image, error) {
-	panic(fmt.Errorf("not implemented"))
+	return &domain.Image{URLMD: obj.URLImage, URLXL: obj.URLImage, URLSM: obj.URLImage}, nil
 }
 
 // TODO dataLoader for []postIDS

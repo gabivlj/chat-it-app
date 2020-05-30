@@ -11,6 +11,7 @@ import (
 	"github.com/99designs/gqlgen/graphql/playground"
 	"github.com/gabivlj/chat-it/internals/graphql"
 	"github.com/gabivlj/chat-it/internals/graphql/generated"
+	"github.com/gabivlj/chat-it/internals/middleware"
 	"github.com/gabivlj/chat-it/internals/repository"
 	"github.com/gorilla/websocket"
 )
@@ -25,7 +26,8 @@ func main() {
 	if port == "" {
 		port = defaultPort
 	}
-	graphqlHandler := generated.NewExecutableSchema(generated.Config{Resolvers: graphql.New(repository.NewRepository())})
+	userRepo, postRepo := repository.NewRepository()
+	graphqlHandler := generated.NewExecutableSchema(generated.Config{Resolvers: graphql.New(userRepo, postRepo)})
 	srv := handler.NewDefaultServer(graphqlHandler)
 	srv.AddTransport(transport.Websocket{
 		KeepAlivePingInterval: 10 * time.Second,
@@ -37,7 +39,7 @@ func main() {
 	})
 
 	http.Handle("/", playground.Handler("GraphQL playground", "/query"))
-	http.Handle("/query", srv)
+	http.Handle("/query", middleware.SessionMiddleware(userRepo.Sessions, srv.ServeHTTP))
 
 	log.Printf("connect to http://localhost:%s/ for GraphQL playground", port)
 	log.Fatal(http.ListenAndServe(":"+port, nil))

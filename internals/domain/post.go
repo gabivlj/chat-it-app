@@ -7,4 +7,5 @@ type Post struct {
 	Title     string `json:"title"`
 	ID        string `json:"id"`
 	CreatedAt int64  `json:"createdAt"`
+	URLImage  string `json:"urlImage"`
 }

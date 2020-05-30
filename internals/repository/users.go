@@ -9,18 +9,14 @@ import (
 	"fmt"
 	"io"
 	"log"
-	"os"
 	"strings"
 	"time"
 
 	"github.com/coocood/freecache"
 	"github.com/gabivlj/chat-it/internals/domain"
-	"github.com/gabivlj/chat-it/internals/services"
-	"github.com/joho/godotenv"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
-	"go.mongodb.org/mongo-driver/mongo/options"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -29,7 +25,7 @@ type UserRepository struct {
 	db             *mongo.Database
 	client         *mongo.Client
 	userCollection *mongo.Collection
-	sessions       *freecache.Cache
+	Sessions       *freecache.Cache
 	// (NOTE) (GABI) : Do pagination with { _id : { $gt: otherid }}
 }
 
@@ -56,34 +52,13 @@ func mongoUser(u *domain.User) *userMongo {
 	return &userMongo{Username: u.Username, ID: id}
 }
 
-func (u *userMongo) Domain() *domain.User {
-	return &domain.User{Username: u.Username, ID: u.ID.Hex()}
+// NewUsersRepo .
+func newUsersRepo(db *mongo.Database, client *mongo.Client) *UserRepository {
+	return &UserRepository{client: client, userCollection: db.Collection("users"), db: db, Sessions: freecache.NewCache(100)}
 }
 
-// NewRepository returns users repo
-func NewRepository() services.UserService {
-	err := godotenv.Load()
-	if err != nil {
-		panic(err)
-	}
-	mongoURI, _ := os.LookupEnv("MONGO_URI_LOCAL")
-	if mongoURI == "" {
-		panic(fmt.Errorf("Mongo URI is empty"))
-	}
-	repo := &UserRepository{db: nil, sessions: freecache.NewCache(100)}
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	options := options.Client()
-	options.SetMaxPoolSize(100)
-	options.ApplyURI(fmt.Sprintf("%s", mongoURI))
-	defer cancel()
-	client, err := mongo.Connect(ctx, options)
-	repo.client = client
-	if err != nil {
-		log.Fatal(err)
-	}
-	repo.db = client.Database("chat-it")
-	repo.userCollection = repo.db.Collection("users")
-	return repo
+func (u *userMongo) Domain() *domain.User {
+	return &domain.User{Username: u.Username, ID: u.ID.Hex()}
 }
 
 // SaveUser saves a user into mongo db
@@ -115,7 +90,7 @@ func (u *UserRepository) SaveUser(ctx context.Context, user *domain.User) (*doma
 	userEnd := mongoU.Domain()
 	bytes, _ := json.Marshal(userEnd)
 	sessionID := newSessionID()
-	u.sessions.Set([]byte(sessionID), bytes, 10000*60*60)
+	u.Sessions.Set([]byte(sessionID), bytes, 10000*60*60)
 	return mongoU.Domain(), sessionID, nil
 }
 
@@ -136,7 +111,7 @@ func (u *UserRepository) LogUser(ctx context.Context, user *domain.User) (*domai
 	user = userMongo.Domain()
 	bytes, _ := json.Marshal(&user)
 	s := newSessionID()
-	u.sessions.Set([]byte(s), bytes, int(time.Hour)*1000)
+	u.Sessions.Set([]byte(s), bytes, int(time.Hour)*1000)
 	return userMongo.Domain(), s, nil
 }
 
@@ -171,7 +146,7 @@ func (u *UserRepository) FindByUsername(ctx context.Context, username string) (*
 
 // VerifySession returns if the passed session is correct
 func (u *UserRepository) VerifySession(session string) (*domain.User, error) {
-	user, err := u.sessions.Get([]byte(session))
+	user, err := u.Sessions.Get([]byte(session))
 	if err != nil {
 		return nil, err
 	}

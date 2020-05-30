@@ -62,7 +62,16 @@ type UserSession {
   session: String!
 }
 
+scalar Upload
+
+input PostForm {
+  image: Upload
+  text: String!
+  title: String!
+}
+
 type Mutation {
   newUser(parameters: FormLogInRegister): UserSession!
   logUser(parameters: FormLogInRegister): UserSession!
+  newPost(form: PostForm!): Post!
 }

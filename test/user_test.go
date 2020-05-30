@@ -14,7 +14,7 @@ func BenchmarkFindByIDs(b *testing.B) {
 	if b.N > benchmarkIterations {
 		return
 	}
-	userRep := repository.NewRepository()
+	userRep, _ := repository.NewRepository()
 	defer userRep.Disconnect(context.TODO())
 	users, err := userRep.FindByIDs(context.TODO(), []string{"5ecff485476916b6cc2d180f", "5ecff4b7fac656a1633f04f7"})
 	if err != nil {
@@ -32,7 +32,7 @@ func BenchmarkRegister(b *testing.B) {
 	if b.N > benchmarkIterations {
 		return
 	}
-	userRep := repository.NewRepository()
+	userRep, _ := repository.NewRepository()
 	defer userRep.Disconnect(context.TODO())
 	user, _, err := userRep.SaveUser(context.TODO(), &domain.User{Username: "gabivlj053", Password: "123456"})
 	if err != nil {
@@ -43,7 +43,7 @@ func BenchmarkRegister(b *testing.B) {
 }
 
 func BenchmarkUserLog(b *testing.B) {
-	userRep := repository.NewRepository()
+	userRep, _ := repository.NewRepository()
 	defer userRep.Disconnect(context.TODO())
 	user, err := userRep.FindByID(context.TODO(), "5ecff485476916b6cc2d180f")
 	if err != nil {
@@ -58,7 +58,7 @@ func BenchmarkUserLog(b *testing.B) {
 }
 
 func BenchmarkUserLogIn(b *testing.B) {
-	userRep := repository.NewRepository()
+	userRep, _ := repository.NewRepository()
 	defer userRep.Disconnect(context.TODO())
 	user, session, err := userRep.LogUser(context.TODO(), &domain.User{Password: "123456", Username: "gabivlj02"})
 	if err != nil {

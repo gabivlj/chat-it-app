@@ -3,6 +3,7 @@
 package model
 
 import (
+	"github.com/99designs/gqlgen/graphql"
 	"github.com/gabivlj/chat-it/internals/domain"
 )
 
@@ -15,6 +16,12 @@ type Params struct {
 	Before *int `json:"before"`
 	After  *int `json:"after"`
 	Limit  *int `json:"limit"`
+}
+
+type PostForm struct {
+	Image *graphql.Upload `json:"image"`
+	Text  string          `json:"text"`
+	Title string          `json:"title"`
 }
 
 type UserQuery struct {
