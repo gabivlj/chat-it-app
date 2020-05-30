@@ -124,6 +124,30 @@ func (p *PostRepository) GetPosts(ctx context.Context, pagination *model.Params)
 }
 
 // GetPostsFromUsers returns all the posts from users
-func (p *PostRepository) GetPostsFromUsers(ctx context.Context, userIds []string) ([][]*domain.Post, error) {
-	return nil, nil
+func (p *PostRepository) GetPostsFromUsers(ctx context.Context, userIDs []string) ([][]*domain.Post, error) {
+	query := bson.M{"userId": bson.M{"$in": userIDs}}
+	posts, err := p.postCollection.Find(ctx, query)
+	if err != nil {
+		return nil, err
+	}
+	var postsMongo []postMongo = []postMongo{}
+	err = posts.All(ctx, &postsMongo)
+	if err != nil {
+		return nil, err
+	}
+	postHash := map[string][]*domain.Post{}
+	for idx := range postsMongo {
+		post := postsMongo[idx]
+		_, ok := postHash[post.UserID]
+		if !ok {
+			postHash[post.UserID] = []*domain.Post{post.Domain()}
+			continue
+		}
+		postHash[post.UserID] = append(postHash[post.UserID], post.Domain())
+	}
+	matrixOfPosts := make([][]*domain.Post, 0, len(userIDs))
+	for _, userID := range userIDs {
+		matrixOfPosts = append(matrixOfPosts, postHash[userID])
+	}
+	return matrixOfPosts, nil
 }

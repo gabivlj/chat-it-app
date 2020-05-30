@@ -12,4 +12,5 @@ type PostService interface {
 	NewPost(ctx context.Context, input *model.PostForm, user *domain.User) (*domain.Post, error)
 	GetPost(ctx context.Context, id string) (*domain.Post, error)
 	GetPosts(ctx context.Context, pagination *model.Params) ([]*domain.Post, error)
+	GetPostsFromUsers(ctx context.Context, userIDs []string) ([][]*domain.Post, error)
 }

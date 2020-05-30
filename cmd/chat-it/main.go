@@ -37,7 +37,7 @@ func main() {
 			},
 		},
 	})
-	middlewareDataloaden := middleware.DataloaderMiddleware(srv, userRepo).ServeHTTP
+	middlewareDataloaden := middleware.DataloaderMiddleware(srv, userRepo, postRepo).ServeHTTP
 	http.Handle("/", playground.Handler("GraphQL playground", "/query"))
 	http.Handle("/query", middleware.SessionMiddleware(userRepo.Sessions, middlewareDataloaden))
 
