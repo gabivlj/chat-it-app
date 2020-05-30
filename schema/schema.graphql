@@ -46,6 +46,7 @@ type Query {
   image(id: ID!): Image!
   imageFromObject(objectID: ID!): Image!
   messagesPost(id: ID!, params: Params): [Message!]!
+  post(id: ID!): Post!
   postsUser(id: ID!, params: Params): [Post!]!
   user(id: UserQuery!): User!
   users: [User!]!

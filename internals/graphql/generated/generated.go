@@ -84,6 +84,7 @@ type ComplexityRoot struct {
 		Image           func(childComplexity int, id string) int
 		ImageFromObject func(childComplexity int, objectID string) int
 		MessagesPost    func(childComplexity int, id string, params *model.Params) int
+		Post            func(childComplexity int, id string) int
 		Posts           func(childComplexity int, params *model.Params) int
 		PostsUser       func(childComplexity int, id string, params *model.Params) int
 		User            func(childComplexity int, id model.UserQuery) int
@@ -126,6 +127,7 @@ type QueryResolver interface {
 	Image(ctx context.Context, id string) (*domain.Image, error)
 	ImageFromObject(ctx context.Context, objectID string) (*domain.Image, error)
 	MessagesPost(ctx context.Context, id string, params *model.Params) ([]*domain.Message, error)
+	Post(ctx context.Context, id string) (*domain.Post, error)
 	PostsUser(ctx context.Context, id string, params *model.Params) ([]*domain.Post, error)
 	User(ctx context.Context, id model.UserQuery) (*domain.User, error)
 	Users(ctx context.Context) ([]*domain.User, error)
@@ -342,6 +344,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Query.MessagesPost(childComplexity, args["id"].(string), args["params"].(*model.Params)), true
 
+	case "Query.post":
+		if e.complexity.Query.Post == nil {
+			break
+		}
+
+		args, err := ec.field_Query_post_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.Post(childComplexity, args["id"].(string)), true
+
 	case "Query.posts":
 		if e.complexity.Query.Posts == nil {
 			break
@@ -539,6 +553,7 @@ type Query {
   image(id: ID!): Image!
   imageFromObject(objectID: ID!): Image!
   messagesPost(id: ID!, params: Params): [Message!]!
+  post(id: ID!): Post!
   postsUser(id: ID!, params: Params): [Post!]!
   user(id: UserQuery!): User!
   users: [User!]!
@@ -679,6 +694,20 @@ func (ec *executionContext) field_Query_messagesPost_args(ctx context.Context, r
 		}
 	}
 	args["params"] = arg1
+	return args, nil
+}
+
+func (ec *executionContext) field_Query_post_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 string
+	if tmp, ok := rawArgs["id"]; ok {
+		arg0, err = ec.unmarshalNID2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["id"] = arg0
 	return args, nil
 }
 
@@ -1581,6 +1610,47 @@ func (ec *executionContext) _Query_messagesPost(ctx context.Context, field graph
 	res := resTmp.([]*domain.Message)
 	fc.Result = res
 	return ec.marshalNMessage2ᚕᚖgithubᚗcomᚋgabivljᚋchatᚑitᚋinternalsᚋdomainᚐMessageᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Query_post(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Query",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Query_post_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	fc.Args = args
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().Post(rctx, args["id"].(string))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*domain.Post)
+	fc.Result = res
+	return ec.marshalNPost2ᚖgithubᚗcomᚋgabivljᚋchatᚑitᚋinternalsᚋdomainᚐPost(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Query_postsUser(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -3479,6 +3549,20 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 					}
 				}()
 				res = ec._Query_messagesPost(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			})
+		case "post":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_post(ctx, field)
 				if res == graphql.Null {
 					atomic.AddUint32(&invalids, 1)
 				}

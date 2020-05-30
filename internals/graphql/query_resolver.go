@@ -42,3 +42,7 @@ func (r *queryResolver) PostsUser(ctx context.Context, id string, params *model.
 func (r *queryResolver) Posts(ctx context.Context, params *model.Params) ([]*domain.Post, error) {
 	panic(fmt.Errorf("not implemented"))
 }
+
+func (r *queryResolver) Post(ctx context.Context, id string) (*domain.Post, error) {
+	return r.postRepo.GetPost(ctx, id)
+}

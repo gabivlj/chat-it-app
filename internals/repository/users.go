@@ -173,9 +173,15 @@ func (u *UserRepository) FindByIDs(ctx context.Context, ids []string) ([]*domain
 	if err != nil {
 		return nil, err
 	}
-	usersRef := make([]*domain.User, len(users))
+	// reorder users to the input of ids []string
+	mapOfUsers := make(map[string]*domain.User, len(ids))
 	for i := range users {
-		usersRef[i] = users[i].Domain()
+		user := users[i].Domain()
+		mapOfUsers[user.ID] = user
+	}
+	usersRef := make([]*domain.User, len(users))
+	for i, id := range ids {
+		usersRef[i] = mapOfUsers[id]
 	}
 	return usersRef, nil
 }

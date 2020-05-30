@@ -37,9 +37,9 @@ func main() {
 			},
 		},
 	})
-
+	middlewareDataloaden := middleware.DataloaderMiddleware(srv, userRepo).ServeHTTP
 	http.Handle("/", playground.Handler("GraphQL playground", "/query"))
-	http.Handle("/query", middleware.SessionMiddleware(userRepo.Sessions, srv.ServeHTTP))
+	http.Handle("/query", middleware.SessionMiddleware(userRepo.Sessions, middlewareDataloaden))
 
 	log.Printf("connect to http://localhost:%s/ for GraphQL playground", port)
 	log.Fatal(http.ListenAndServe(":"+port, nil))

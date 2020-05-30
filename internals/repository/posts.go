@@ -2,6 +2,7 @@ package repository
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"time"
 
@@ -20,12 +21,12 @@ type PostRepository struct {
 }
 
 type postMongo struct {
-	UserID    string             `bson:"userId"`
-	Text      string             `bson:"text"`
-	Title     string             `bson:"title"`
-	ID        primitive.ObjectID `bson:"id"`
-	CreatedAt int64              `bson:"createdAt"`
-	URLImage  string             `bson:"urlImg"`
+	UserID    string             `bson:"userId,omitempty"`
+	Text      string             `bson:"text,omitempty"`
+	Title     string             `bson:"title,omitempty"`
+	ID        primitive.ObjectID `bson:"_id,omitempty"`
+	CreatedAt int64              `bson:"createdAt,omitempty"`
+	URLImage  string             `bson:"urlImg,omitempty"`
 }
 
 func (p *postMongo) Domain() *domain.Post {
@@ -42,7 +43,7 @@ func (p *PostRepository) NewPost(ctx context.Context, input *model.PostForm, use
 	if input.Image.File != nil && err != nil {
 		return nil, err
 	}
-	log.Println(uri)
+	log.Printf("New Post image: %s \n", uri)
 	postInsertion := &postMongo{UserID: user.ID, Text: input.Text, Title: input.Title, CreatedAt: time.Now().Unix(), URLImage: uri}
 	id, errorInserting := p.postCollection.InsertOne(ctx, postInsertion)
 	if errorInserting != nil {
@@ -59,6 +60,7 @@ func (p *PostRepository) GetPost(ctx context.Context, id string) (*domain.Post, 
 	if err != nil {
 		return nil, err
 	}
+	fmt.Println(idStr)
 	post := &postMongo{ID: idStr}
 	res := p.postCollection.FindOne(ctx, post)
 	err = res.Err()

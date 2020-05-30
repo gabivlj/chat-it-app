@@ -10,4 +10,5 @@ import (
 // PostService is the service that handles post logic and needs to be implemented
 type PostService interface {
 	NewPost(ctx context.Context, input *model.PostForm, user *domain.User) (*domain.Post, error)
+	GetPost(ctx context.Context, id string) (*domain.Post, error)
 }

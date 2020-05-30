@@ -5,14 +5,13 @@ import (
 	"fmt"
 
 	"github.com/gabivlj/chat-it/internals/domain"
+	"github.com/gabivlj/chat-it/internals/middleware"
 )
 
-// TODO dataLoader for userIDs
 func (r *postResolver) User(ctx context.Context, obj *domain.Post) (*domain.User, error) {
-	panic(fmt.Errorf("not implemented"))
+	return middleware.DataLoaderUser(ctx).Load(obj.UserID)
 }
 
-// TODO dataLoader for objectIDs
 func (r *postResolver) Image(ctx context.Context, obj *domain.Post) (*domain.Image, error) {
 	return &domain.Image{URLMD: obj.URLImage, URLXL: obj.URLImage, URLSM: obj.URLImage}, nil
 }
