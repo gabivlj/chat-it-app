@@ -32,9 +32,9 @@ type Image {
 }
 
 input Params {
-  before: Int
-  after: Int
-  limit: Int
+  before: ID
+  after: ID
+  limit: Int!
 }
 
 input UserQuery {

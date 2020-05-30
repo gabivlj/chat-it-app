@@ -13,9 +13,9 @@ type FormLogInRegister struct {
 }
 
 type Params struct {
-	Before *int `json:"before"`
-	After  *int `json:"after"`
-	Limit  *int `json:"limit"`
+	Before *string `json:"before"`
+	After  *string `json:"after"`
+	Limit  int     `json:"limit"`
 }
 
 type PostForm struct {

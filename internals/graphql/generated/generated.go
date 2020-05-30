@@ -539,9 +539,9 @@ type Image {
 }
 
 input Params {
-  before: Int
-  after: Int
-  limit: Int
+  before: ID
+  after: ID
+  limit: Int!
 }
 
 input UserQuery {
@@ -3167,19 +3167,19 @@ func (ec *executionContext) unmarshalInputParams(ctx context.Context, obj interf
 		switch k {
 		case "before":
 			var err error
-			it.Before, err = ec.unmarshalOInt2ᚖint(ctx, v)
+			it.Before, err = ec.unmarshalOID2ᚖstring(ctx, v)
 			if err != nil {
 				return it, err
 			}
 		case "after":
 			var err error
-			it.After, err = ec.unmarshalOInt2ᚖint(ctx, v)
+			it.After, err = ec.unmarshalOID2ᚖstring(ctx, v)
 			if err != nil {
 				return it, err
 			}
 		case "limit":
 			var err error
-			it.Limit, err = ec.unmarshalOInt2ᚖint(ctx, v)
+			it.Limit, err = ec.unmarshalNInt2int(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -4015,6 +4015,20 @@ func (ec *executionContext) marshalNImage2ᚖgithubᚗcomᚋgabivljᚋchatᚑit�
 	return ec._Image(ctx, sel, v)
 }
 
+func (ec *executionContext) unmarshalNInt2int(ctx context.Context, v interface{}) (int, error) {
+	return graphql.UnmarshalInt(v)
+}
+
+func (ec *executionContext) marshalNInt2int(ctx context.Context, sel ast.SelectionSet, v int) graphql.Marshaler {
+	res := graphql.MarshalInt(v)
+	if res == graphql.Null {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "must not be null")
+		}
+	}
+	return res
+}
+
 func (ec *executionContext) unmarshalNInt2int64(ctx context.Context, v interface{}) (int64, error) {
 	return graphql.UnmarshalInt64(v)
 }
@@ -4511,29 +4525,6 @@ func (ec *executionContext) marshalOImage2ᚖgithubᚗcomᚋgabivljᚋchatᚑit�
 		return graphql.Null
 	}
 	return ec._Image(ctx, sel, v)
-}
-
-func (ec *executionContext) unmarshalOInt2int(ctx context.Context, v interface{}) (int, error) {
-	return graphql.UnmarshalInt(v)
-}
-
-func (ec *executionContext) marshalOInt2int(ctx context.Context, sel ast.SelectionSet, v int) graphql.Marshaler {
-	return graphql.MarshalInt(v)
-}
-
-func (ec *executionContext) unmarshalOInt2ᚖint(ctx context.Context, v interface{}) (*int, error) {
-	if v == nil {
-		return nil, nil
-	}
-	res, err := ec.unmarshalOInt2int(ctx, v)
-	return &res, err
-}
-
-func (ec *executionContext) marshalOInt2ᚖint(ctx context.Context, sel ast.SelectionSet, v *int) graphql.Marshaler {
-	if v == nil {
-		return graphql.Null
-	}
-	return ec.marshalOInt2int(ctx, sel, *v)
 }
 
 func (ec *executionContext) unmarshalOParams2githubᚗcomᚋgabivljᚋchatᚑitᚋinternalsᚋgraphqlᚋmodelᚐParams(ctx context.Context, v interface{}) (model.Params, error) {
