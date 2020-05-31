@@ -6,4 +6,5 @@ type Message struct {
 	CreatedAt int64  `json:"createdAt"`
 	Text      string `json:"text"`
 	UserID    string `json:"userId"`
+	PostID    string `json:"postId"`
 }

@@ -41,10 +41,15 @@ func newPostRepository(db *mongo.Database, client *mongo.Client, fileUpl *CloudS
 
 // NewPost returns a new post saved in the database
 func (p *PostRepository) NewPost(ctx context.Context, input *model.PostForm, user *domain.User) (*domain.Post, error) {
-	uri, err := p.fileUpl.UploadFile(ctx, input.Image.File, input.Image.ContentType)
-	if input.Image.File != nil && err != nil {
-		return nil, err
+	var uri string
+	var err error
+	if input.Image != nil {
+		uri, err = p.fileUpl.UploadFile(ctx, input.Image.File, input.Image.ContentType)
+		if input.Image.File != nil && err != nil {
+			return nil, err
+		}
 	}
+
 	log.Printf("New Post image: %s \n", uri)
 	postInsertion := &postMongo{UserID: user.ID, Text: input.Text, Title: input.Title, CreatedAt: time.Now().Unix(), URLImage: uri}
 	id, errorInserting := p.postCollection.InsertOne(ctx, postInsertion)
