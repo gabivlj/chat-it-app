@@ -29,11 +29,13 @@ func SessionMiddleware(sessions *freecache.Cache, graphQLHandle http.HandlerFunc
 func (s *sessionMiddleware) Auth(next http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		auth := r.Header.Get("Authorization")
+
 		if auth == "" {
 			next(w, r)
 			return
 		}
 		userBytes, err := s.sessions.Get([]byte(auth))
+
 		if err != nil {
 			next(w, r)
 			return

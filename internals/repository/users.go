@@ -12,6 +12,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/99designs/gqlgen/graphql"
 	"github.com/coocood/freecache"
 	"github.com/gabivlj/chat-it/internals/domain"
 	"go.mongodb.org/mongo-driver/bson"
@@ -26,6 +27,7 @@ type UserRepository struct {
 	client         *mongo.Client
 	userCollection *mongo.Collection
 	Sessions       *freecache.Cache
+	fileUpl        *CloudStorageImages
 	// (NOTE) (GABI) : Do pagination with { _id : { $gt: otherid }}
 }
 
@@ -38,6 +40,7 @@ type userMongo struct {
 	ID       primitive.ObjectID `bson:"_id,omitempty"`
 	Username string             `bson:"username,omitempty"`
 	Password string             `bson:"password,omitempty"`
+	ImageURL string             `bson:"imageURL,omitempty"`
 }
 
 // Mongo returns the user in our package
@@ -49,16 +52,16 @@ func mongoUser(u *domain.User) *userMongo {
 			id = ids
 		}
 	}
-	return &userMongo{Username: u.Username, ID: id}
+	return &userMongo{Username: u.Username, ID: id, ImageURL: u.ImageURL}
 }
 
 // NewUsersRepo .
-func newUsersRepo(db *mongo.Database, client *mongo.Client) *UserRepository {
-	return &UserRepository{client: client, userCollection: db.Collection("users"), db: db, Sessions: freecache.NewCache(100)}
+func newUsersRepo(db *mongo.Database, client *mongo.Client, fileUpl *CloudStorageImages) *UserRepository {
+	return &UserRepository{client: client, userCollection: db.Collection("users"), db: db, Sessions: freecache.NewCache(100), fileUpl: fileUpl}
 }
 
 func (u *userMongo) Domain() *domain.User {
-	return &domain.User{Username: u.Username, ID: u.ID.Hex()}
+	return &domain.User{Username: u.Username, ID: u.ID.Hex(), ImageURL: u.ImageURL}
 }
 
 // SaveUser saves a user into mongo db
@@ -184,6 +187,32 @@ func (u *UserRepository) FindByIDs(ctx context.Context, ids []string) ([]*domain
 		usersRef[i] = mapOfUsers[id]
 	}
 	return usersRef, nil
+}
+
+// UpdateProfileImage updates the user profile image
+func (u *UserRepository) UpdateProfileImage(ctx context.Context, image graphql.Upload, user *domain.User) (*domain.User, error) {
+	uri, err := u.fileUpl.UploadFile(ctx, image.File, image.ContentType)
+	if err != nil {
+		return nil, err
+	}
+	id, err := primitive.ObjectIDFromHex(user.ID)
+	if err != nil {
+		return nil, err
+	}
+	user.ImageURL = uri
+	query := mongoUser(user)
+	// Empty fields (just in case)
+	query.ID = primitive.NilObjectID
+	query.Username = ""
+	query.Password = ""
+	result, err := u.userCollection.UpdateOne(ctx, bson.M{"_id": id}, bson.M{"$set": query})
+	if err != nil {
+		return nil, err
+	}
+	if result.MatchedCount == 0 {
+		return nil, fmt.Errorf("no matched documents: %d", result.MatchedCount)
+	}
+	return user, nil
 }
 
 func newSessionID() string {

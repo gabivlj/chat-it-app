@@ -39,7 +39,7 @@ func DataloaderMiddleware(next http.Handler, userRepository services.UserService
 		}
 		userLoader := dataloader.NewUserLoader(userLoaderConfig)
 		postLoader := dataloader.NewPostLoader(postLoaderConfig)
-		tx := context.WithValue(context.Background(), userDataLoaderKey, userLoader)
+		tx := context.WithValue(r.Context(), userDataLoaderKey, userLoader)
 		tx = context.WithValue(tx, postDataLoaderKey, postLoader)
 		next.ServeHTTP(w, r.WithContext(tx))
 	})

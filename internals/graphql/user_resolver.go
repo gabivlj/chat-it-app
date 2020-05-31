@@ -2,7 +2,6 @@ package graphql
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/gabivlj/chat-it/internals/domain"
 	"github.com/gabivlj/chat-it/internals/middleware"
@@ -13,5 +12,5 @@ func (r *userResolver) Posts(ctx context.Context, obj *domain.User) ([]*domain.P
 }
 
 func (r *userResolver) ProfileImage(ctx context.Context, obj *domain.User) (*domain.Image, error) {
-	panic(fmt.Errorf("not implemented"))
+	return &domain.Image{URLXL: obj.ImageURL, URLMD: obj.ImageURL, URLSM: obj.ImageURL}, nil
 }

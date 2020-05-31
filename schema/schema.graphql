@@ -74,5 +74,6 @@ input PostForm {
 type Mutation {
   newUser(parameters: FormLogInRegister): UserSession!
   logUser(parameters: FormLogInRegister): UserSession!
+  newProfileImage(image: Upload!): User!
   newPost(form: PostForm!): Post!
 }

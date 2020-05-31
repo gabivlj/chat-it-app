@@ -65,9 +65,10 @@ type ComplexityRoot struct {
 	}
 
 	Mutation struct {
-		LogUser func(childComplexity int, parameters *model.FormLogInRegister) int
-		NewPost func(childComplexity int, form model.PostForm) int
-		NewUser func(childComplexity int, parameters *model.FormLogInRegister) int
+		LogUser         func(childComplexity int, parameters *model.FormLogInRegister) int
+		NewPost         func(childComplexity int, form model.PostForm) int
+		NewProfileImage func(childComplexity int, image graphql.Upload) int
+		NewUser         func(childComplexity int, parameters *model.FormLogInRegister) int
 	}
 
 	Post struct {
@@ -115,6 +116,7 @@ type MessageResolver interface {
 type MutationResolver interface {
 	NewUser(ctx context.Context, parameters *model.FormLogInRegister) (*model.UserSession, error)
 	LogUser(ctx context.Context, parameters *model.FormLogInRegister) (*model.UserSession, error)
+	NewProfileImage(ctx context.Context, image graphql.Upload) (*domain.User, error)
 	NewPost(ctx context.Context, form model.PostForm) (*domain.Post, error)
 }
 type PostResolver interface {
@@ -246,6 +248,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Mutation.NewPost(childComplexity, args["form"].(model.PostForm)), true
+
+	case "Mutation.newProfileImage":
+		if e.complexity.Mutation.NewProfileImage == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_newProfileImage_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.NewProfileImage(childComplexity, args["image"].(graphql.Upload)), true
 
 	case "Mutation.newUser":
 		if e.complexity.Mutation.NewUser == nil {
@@ -581,6 +595,7 @@ input PostForm {
 type Mutation {
   newUser(parameters: FormLogInRegister): UserSession!
   logUser(parameters: FormLogInRegister): UserSession!
+  newProfileImage(image: Upload!): User!
   newPost(form: PostForm!): Post!
 }
 `, BuiltIn: false},
@@ -616,6 +631,20 @@ func (ec *executionContext) field_Mutation_newPost_args(ctx context.Context, raw
 		}
 	}
 	args["form"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Mutation_newProfileImage_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 graphql.Upload
+	if tmp, ok := rawArgs["image"]; ok {
+		arg0, err = ec.unmarshalNUpload2githubᚗcomᚋ99designsᚋgqlgenᚋgraphqlᚐUpload(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["image"] = arg0
 	return args, nil
 }
 
@@ -1211,6 +1240,47 @@ func (ec *executionContext) _Mutation_logUser(ctx context.Context, field graphql
 	res := resTmp.(*model.UserSession)
 	fc.Result = res
 	return ec.marshalNUserSession2ᚖgithubᚗcomᚋgabivljᚋchatᚑitᚋinternalsᚋgraphqlᚋmodelᚐUserSession(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Mutation_newProfileImage(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Mutation",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Mutation_newProfileImage_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	fc.Args = args
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().NewProfileImage(rctx, args["image"].(graphql.Upload))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*domain.User)
+	fc.Result = res
+	return ec.marshalNUser2ᚖgithubᚗcomᚋgabivljᚋchatᚑitᚋinternalsᚋdomainᚐUser(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Mutation_newPost(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -3400,6 +3470,11 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
+		case "newProfileImage":
+			out.Values[i] = ec._Mutation_newProfileImage(ctx, field)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
 		case "newPost":
 			out.Values[i] = ec._Mutation_newPost(ctx, field)
 			if out.Values[i] == graphql.Null {
@@ -4155,6 +4230,20 @@ func (ec *executionContext) unmarshalNString2string(ctx context.Context, v inter
 
 func (ec *executionContext) marshalNString2string(ctx context.Context, sel ast.SelectionSet, v string) graphql.Marshaler {
 	res := graphql.MarshalString(v)
+	if res == graphql.Null {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "must not be null")
+		}
+	}
+	return res
+}
+
+func (ec *executionContext) unmarshalNUpload2githubᚗcomᚋ99designsᚋgqlgenᚋgraphqlᚐUpload(ctx context.Context, v interface{}) (graphql.Upload, error) {
+	return graphql.UnmarshalUpload(v)
+}
+
+func (ec *executionContext) marshalNUpload2githubᚗcomᚋ99designsᚋgqlgenᚋgraphqlᚐUpload(ctx context.Context, sel ast.SelectionSet, v graphql.Upload) graphql.Marshaler {
+	res := graphql.MarshalUpload(v)
 	if res == graphql.Null {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
 			ec.Errorf(ctx, "must not be null")
