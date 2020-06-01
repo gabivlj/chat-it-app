@@ -6,6 +6,7 @@ import (
 	"bytes"
 	"context"
 	"errors"
+	"io"
 	"strconv"
 	"sync"
 	"sync/atomic"
@@ -41,10 +42,12 @@ type ResolverRoot interface {
 	Mutation() MutationResolver
 	Post() PostResolver
 	Query() QueryResolver
+	Subscription() SubscriptionResolver
 	User() UserResolver
 }
 
 type DirectiveRoot struct {
+	User func(ctx context.Context, obj interface{}, next graphql.Resolver, id string) (res interface{}, err error)
 }
 
 type ComplexityRoot struct {
@@ -69,6 +72,7 @@ type ComplexityRoot struct {
 		NewPost         func(childComplexity int, form model.PostForm) int
 		NewProfileImage func(childComplexity int, image graphql.Upload) int
 		NewUser         func(childComplexity int, parameters *model.FormLogInRegister) int
+		SendMessage     func(childComplexity int, text string, postID string, userID string) int
 	}
 
 	Post struct {
@@ -90,6 +94,10 @@ type ComplexityRoot struct {
 		PostsUser       func(childComplexity int, id string, params *model.Params) int
 		User            func(childComplexity int, id model.UserQuery) int
 		Users           func(childComplexity int) int
+	}
+
+	Subscription struct {
+		NewMessage func(childComplexity int, postID string) int
 	}
 
 	User struct {
@@ -118,6 +126,7 @@ type MutationResolver interface {
 	LogUser(ctx context.Context, parameters *model.FormLogInRegister) (*model.UserSession, error)
 	NewProfileImage(ctx context.Context, image graphql.Upload) (*domain.User, error)
 	NewPost(ctx context.Context, form model.PostForm) (*domain.Post, error)
+	SendMessage(ctx context.Context, text string, postID string, userID string) (*domain.Message, error)
 }
 type PostResolver interface {
 	User(ctx context.Context, obj *domain.Post) (*domain.User, error)
@@ -134,6 +143,9 @@ type QueryResolver interface {
 	User(ctx context.Context, id model.UserQuery) (*domain.User, error)
 	Users(ctx context.Context) ([]*domain.User, error)
 	Posts(ctx context.Context, params *model.Params) ([]*domain.Post, error)
+}
+type SubscriptionResolver interface {
+	NewMessage(ctx context.Context, postID string) (<-chan *domain.Message, error)
 }
 type UserResolver interface {
 	Posts(ctx context.Context, obj *domain.User) ([]*domain.Post, error)
@@ -272,6 +284,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Mutation.NewUser(childComplexity, args["parameters"].(*model.FormLogInRegister)), true
+
+	case "Mutation.sendMessage":
+		if e.complexity.Mutation.SendMessage == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_sendMessage_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.SendMessage(childComplexity, args["text"].(string), args["postId"].(string), args["userId"].(string)), true
 
 	case "Post.chat":
 		if e.complexity.Post.Chat == nil {
@@ -413,6 +437,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Query.Users(childComplexity), true
 
+	case "Subscription.newMessage":
+		if e.complexity.Subscription.NewMessage == nil {
+			break
+		}
+
+		args, err := ec.field_Subscription_newMessage_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Subscription.NewMessage(childComplexity, args["postId"].(string)), true
+
 	case "User.id":
 		if e.complexity.User.ID == nil {
 			break
@@ -487,6 +523,25 @@ func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
 			first = false
 			data := ec._Mutation(ctx, rc.Operation.SelectionSet)
 			var buf bytes.Buffer
+			data.MarshalGQL(&buf)
+
+			return &graphql.Response{
+				Data: buf.Bytes(),
+			}
+		}
+	case ast.Subscription:
+		next := ec._subscriptionMiddleware(ctx, rc.Operation, func(ctx context.Context) (interface{}, error) {
+			return ec._Subscription(ctx, rc.Operation.SelectionSet), nil
+		})
+
+		var buf bytes.Buffer
+		return func(ctx context.Context) *graphql.Response {
+			buf.Reset()
+			data := next()
+
+			if data == nil {
+				return nil
+			}
 			data.MarshalGQL(&buf)
 
 			return &graphql.Response{
@@ -597,7 +652,20 @@ type Mutation {
   logUser(parameters: FormLogInRegister): UserSession!
   newProfileImage(image: Upload!): User!
   newPost(form: PostForm!): Post!
+  sendMessage(text: String!, postId: ID!, userId: ID!): Message!
 }
+
+enum TypeOfMessage {
+  CONNECTION
+  MESSAGE
+  EXIT
+}
+
+type Subscription {
+  newMessage(postId: ID!): Message!
+}
+
+directive @user(id: ID!) on SUBSCRIPTION
 `, BuiltIn: false},
 }
 var parsedSchema = gqlparser.MustLoadSchema(sources...)
@@ -605,6 +673,20 @@ var parsedSchema = gqlparser.MustLoadSchema(sources...)
 // endregion ************************** generated!.gotpl **************************
 
 // region    ***************************** args.gotpl *****************************
+
+func (ec *executionContext) dir_user_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 string
+	if tmp, ok := rawArgs["id"]; ok {
+		arg0, err = ec.unmarshalNID2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["id"] = arg0
+	return args, nil
+}
 
 func (ec *executionContext) field_Mutation_logUser_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
@@ -659,6 +741,36 @@ func (ec *executionContext) field_Mutation_newUser_args(ctx context.Context, raw
 		}
 	}
 	args["parameters"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Mutation_sendMessage_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 string
+	if tmp, ok := rawArgs["text"]; ok {
+		arg0, err = ec.unmarshalNString2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["text"] = arg0
+	var arg1 string
+	if tmp, ok := rawArgs["postId"]; ok {
+		arg1, err = ec.unmarshalNID2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["postId"] = arg1
+	var arg2 string
+	if tmp, ok := rawArgs["userId"]; ok {
+		arg2, err = ec.unmarshalNID2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["userId"] = arg2
 	return args, nil
 }
 
@@ -790,6 +902,20 @@ func (ec *executionContext) field_Query_user_args(ctx context.Context, rawArgs m
 	return args, nil
 }
 
+func (ec *executionContext) field_Subscription_newMessage_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 string
+	if tmp, ok := rawArgs["postId"]; ok {
+		arg0, err = ec.unmarshalNID2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["postId"] = arg0
+	return args, nil
+}
+
 func (ec *executionContext) field___Type_enumValues_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
@@ -821,6 +947,43 @@ func (ec *executionContext) field___Type_fields_args(ctx context.Context, rawArg
 // endregion ***************************** args.gotpl *****************************
 
 // region    ************************** directives.gotpl **************************
+
+func (ec *executionContext) _subscriptionMiddleware(ctx context.Context, obj *ast.OperationDefinition, next func(ctx context.Context) (interface{}, error)) func() graphql.Marshaler {
+	for _, d := range obj.Directives {
+		switch d.Name {
+		case "user":
+			rawArgs := d.ArgumentMap(ec.Variables)
+			args, err := ec.dir_user_args(ctx, rawArgs)
+			if err != nil {
+				ec.Error(ctx, err)
+				return func() graphql.Marshaler {
+					return graphql.Null
+				}
+			}
+			n := next
+			next = func(ctx context.Context) (interface{}, error) {
+				if ec.directives.User == nil {
+					return nil, errors.New("directive user is not implemented")
+				}
+				return ec.directives.User(ctx, obj, n, args["id"].(string))
+			}
+		}
+	}
+	tmp, err := next(ctx)
+	if err != nil {
+		ec.Error(ctx, err)
+		return func() graphql.Marshaler {
+			return graphql.Null
+		}
+	}
+	if data, ok := tmp.(func() graphql.Marshaler); ok {
+		return data
+	}
+	ec.Errorf(ctx, `unexpected type %T from directive, should be graphql.Marshaler`, tmp)
+	return func() graphql.Marshaler {
+		return graphql.Null
+	}
+}
 
 // endregion ************************** directives.gotpl **************************
 
@@ -1322,6 +1485,47 @@ func (ec *executionContext) _Mutation_newPost(ctx context.Context, field graphql
 	res := resTmp.(*domain.Post)
 	fc.Result = res
 	return ec.marshalNPost2ᚖgithubᚗcomᚋgabivljᚋchatᚑitᚋinternalsᚋdomainᚐPost(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Mutation_sendMessage(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Mutation",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Mutation_sendMessage_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	fc.Args = args
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().SendMessage(rctx, args["text"].(string), args["postId"].(string), args["userId"].(string))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*domain.Message)
+	fc.Result = res
+	return ec.marshalNMessage2ᚖgithubᚗcomᚋgabivljᚋchatᚑitᚋinternalsᚋdomainᚐMessage(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Post_user(ctx context.Context, field graphql.CollectedField, obj *domain.Post) (ret graphql.Marshaler) {
@@ -1947,6 +2151,57 @@ func (ec *executionContext) _Query___schema(ctx context.Context, field graphql.C
 	res := resTmp.(*introspection.Schema)
 	fc.Result = res
 	return ec.marshalO__Schema2ᚖgithubᚗcomᚋ99designsᚋgqlgenᚋgraphqlᚋintrospectionᚐSchema(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Subscription_newMessage(ctx context.Context, field graphql.CollectedField) (ret func() graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = nil
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Subscription",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Subscription_newMessage_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return nil
+	}
+	fc.Args = args
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Subscription().NewMessage(rctx, args["postId"].(string))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return nil
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return nil
+	}
+	return func() graphql.Marshaler {
+		res, ok := <-resTmp.(<-chan *domain.Message)
+		if !ok {
+			return nil
+		}
+		return graphql.WriterFunc(func(w io.Writer) {
+			w.Write([]byte{'{'})
+			graphql.MarshalString(field.Alias).MarshalGQL(w)
+			w.Write([]byte{':'})
+			ec.marshalNMessage2ᚖgithubᚗcomᚋgabivljᚋchatᚑitᚋinternalsᚋdomainᚐMessage(ctx, field.Selections, res).MarshalGQL(w)
+			w.Write([]byte{'}'})
+		})
+	}
 }
 
 func (ec *executionContext) _User_id(ctx context.Context, field graphql.CollectedField, obj *domain.User) (ret graphql.Marshaler) {
@@ -3480,6 +3735,11 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
+		case "sendMessage":
+			out.Values[i] = ec._Mutation_sendMessage(ctx, field)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -3712,6 +3972,26 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 		return graphql.Null
 	}
 	return out
+}
+
+var subscriptionImplementors = []string{"Subscription"}
+
+func (ec *executionContext) _Subscription(ctx context.Context, sel ast.SelectionSet) func() graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, subscriptionImplementors)
+	ctx = graphql.WithFieldContext(ctx, &graphql.FieldContext{
+		Object: "Subscription",
+	})
+	if len(fields) != 1 {
+		ec.Errorf(ctx, "must subscribe to exactly one stream")
+		return nil
+	}
+
+	switch fields[0].Name {
+	case "newMessage":
+		return ec._Subscription_newMessage(ctx, fields[0])
+	default:
+		panic("unknown field " + strconv.Quote(fields[0].Name))
+	}
 }
 
 var userImplementors = []string{"User"}

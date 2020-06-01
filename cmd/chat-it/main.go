@@ -1,12 +1,16 @@
 package main
 
 import (
+	"context"
+	"fmt"
 	"log"
 	"net/http"
 	"os"
 	"time"
 
 	"github.com/99designs/gqlgen/graphql/handler"
+	"github.com/99designs/gqlgen/graphql/handler/extension"
+	"github.com/99designs/gqlgen/graphql/handler/lru"
 	"github.com/99designs/gqlgen/graphql/handler/transport"
 	"github.com/99designs/gqlgen/graphql/playground"
 	"github.com/gabivlj/chat-it/internals/graphql"
@@ -26,21 +30,48 @@ func main() {
 	if port == "" {
 		port = defaultPort
 	}
-	userRepo, postRepo := repository.NewRepository()
-	graphqlHandler := generated.NewExecutableSchema(generated.Config{Resolvers: graphql.New(userRepo, postRepo)})
-	srv := handler.NewDefaultServer(graphqlHandler)
+	userRepo, postRepo, msgRepo, repoConnections := repository.NewRepository()
+	graphqlHandler := generated.NewExecutableSchema(generated.Config{Resolvers: graphql.New(userRepo, postRepo, repoConnections, msgRepo), Directives: *graphql.NewDirectives()})
+	srv := handler.New(graphqlHandler)
+	middlewareDataloadenHTTP, middlewareDataloadenWebSockets := middleware.DataloaderMiddleware(srv, userRepo, postRepo)
+	middlewareHTTP, middlewareSessionsWebsockets := middleware.SessionMiddleware(userRepo.Sessions, middlewareDataloadenHTTP.ServeHTTP)
+	addTransports(srv, middlewareSessionsWebsockets, middlewareDataloadenWebSockets)
+
+	http.Handle("/", playground.Handler("GraphQL playground", "/query"))
+	http.Handle("/query", middlewareHTTP)
+
+	log.Printf("connect to http://localhost:%s/ for GraphQL playground", port)
+	testWs(srv)
+	log.Fatal(http.ListenAndServe(":"+port, nil))
+}
+
+func addTransports(srv *handler.Server, middlewareWebsocketsSession func(ctx context.Context, token string) context.Context, middlewareWebsocketsDataLoader func(context.Context) context.Context) {
 	srv.AddTransport(transport.Websocket{
+		InitFunc: func(ctx context.Context, initPayload transport.InitPayload) (context.Context, error) {
+			token := initPayload.Authorization()
+			tx := middlewareWebsocketsSession(ctx, token)
+			tx = middlewareWebsocketsDataLoader(tx)
+			user, err := middleware.GetUser(tx)
+			fmt.Println(user, err)
+			return tx, nil
+		},
 		KeepAlivePingInterval: 10 * time.Second,
 		Upgrader: websocket.Upgrader{
 			CheckOrigin: func(r *http.Request) bool {
 				return true
 			},
+			EnableCompression: true,
 		},
 	})
-	middlewareDataloaden := middleware.DataloaderMiddleware(srv, userRepo, postRepo).ServeHTTP
-	http.Handle("/", playground.Handler("GraphQL playground", "/query"))
-	http.Handle("/query", middleware.SessionMiddleware(userRepo.Sessions, middlewareDataloaden))
+	srv.AddTransport(transport.Options{})
+	srv.AddTransport(transport.GET{})
+	srv.AddTransport(transport.POST{})
+	srv.AddTransport(transport.MultipartForm{})
+	srv.SetQueryCache(lru.New(1000))
 
-	log.Printf("connect to http://localhost:%s/ for GraphQL playground", port)
-	log.Fatal(http.ListenAndServe(":"+port, nil))
+	srv.Use(extension.Introspection{})
+	srv.Use(extension.AutomaticPersistedQuery{
+		Cache: lru.New(100),
+	})
+
 }

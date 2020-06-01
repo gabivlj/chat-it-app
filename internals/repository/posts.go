@@ -6,12 +6,12 @@ import (
 	"log"
 	"time"
 
+	"github.com/gabivlj/chat-it/internals/constants"
 	"github.com/gabivlj/chat-it/internals/domain"
 	"github.com/gabivlj/chat-it/internals/graphql/model"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
-	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
 // PostRepository uses mongodb to store and handle posts bussiness logic
@@ -36,7 +36,11 @@ func (p *postMongo) Domain() *domain.Post {
 }
 
 func newPostRepository(db *mongo.Database, client *mongo.Client, fileUpl *CloudStorageImages) *PostRepository {
-	return &PostRepository{db: db, client: client, postCollection: db.Collection("posts"), fileUpl: fileUpl}
+	coll := db.Collection("posts")
+	// GABI TODO: Maybe just check if the index exists, and if it doesn't create it.
+	// name, err := coll.Indexes().CreateOne(context.Background(), mongo.IndexModel{Keys: bson.M{"userId": 1}})
+	// log.Printf("repository - posts.go: tried creating indexes on userId, name: %s, err: %v", name, err)
+	return &PostRepository{db: db, client: client, postCollection: coll, fileUpl: fileUpl}
 }
 
 // NewPost returns a new post saved in the database
@@ -67,7 +71,7 @@ func (p *PostRepository) GetPost(ctx context.Context, id string) (*domain.Post, 
 	if err != nil {
 		return nil, err
 	}
-	fmt.Println(idStr)
+	fmt.Println("POST:", idStr)
 	post := &postMongo{ID: idStr}
 	res := p.postCollection.FindOne(ctx, post)
 	err = res.Err()
@@ -83,35 +87,10 @@ func (p *PostRepository) GetPost(ctx context.Context, id string) (*domain.Post, 
 
 var empty = ""
 
-func unwrapPointerObjectID(s *string) (primitive.ObjectID, error) {
-	if s == nil {
-		return primitive.NilObjectID, nil
-	}
-	return primitive.ObjectIDFromHex(*s)
-}
-
 // GetPosts returns the posts of the frontpage
 func (p *PostRepository) GetPosts(ctx context.Context, pagination *model.Params) ([]*domain.Post, error) {
-	after, err := unwrapPointerObjectID(pagination.After)
-	if err != nil {
-		return nil, err
-	}
-	before, err := unwrapPointerObjectID(pagination.Before)
-	if err != nil {
-		return nil, err
-	}
-	options := options.Find()
-	l := int64(pagination.Limit)
-	options.Limit = &l
-	options.Sort = bson.M{"createdAt": -1}
-	var query bson.M
-	if after == primitive.NilObjectID && before == primitive.NilObjectID {
-		query = bson.M{}
-	} else if after != primitive.NilObjectID {
-		query = bson.M{"_id": bson.M{"$gt": after}}
-	} else {
-		query = bson.M{"_id": bson.M{"$lt": before}}
-	}
+	options, query, err := parsePagination(pagination)
+	options.Sort = constants.SortDescendingCreatedAt
 	postsResult, err := p.postCollection.Find(ctx, query, options)
 	if err != nil {
 		return nil, err

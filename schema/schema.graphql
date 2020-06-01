@@ -76,4 +76,17 @@ type Mutation {
   logUser(parameters: FormLogInRegister): UserSession!
   newProfileImage(image: Upload!): User!
   newPost(form: PostForm!): Post!
+  sendMessage(text: String!, postId: ID!, userId: ID!): Message!
 }
+
+enum TypeOfMessage {
+  CONNECTION
+  MESSAGE
+  EXIT
+}
+
+type Subscription {
+  newMessage(postId: ID!): Message!
+}
+
+directive @user(id: ID!) on SUBSCRIPTION

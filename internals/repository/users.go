@@ -57,7 +57,7 @@ func mongoUser(u *domain.User) *userMongo {
 
 // NewUsersRepo .
 func newUsersRepo(db *mongo.Database, client *mongo.Client, fileUpl *CloudStorageImages) *UserRepository {
-	return &UserRepository{client: client, userCollection: db.Collection("users"), db: db, Sessions: freecache.NewCache(100), fileUpl: fileUpl}
+	return &UserRepository{client: client, userCollection: db.Collection("users"), db: db, Sessions: freecache.NewCache(1024 * 1024 * 10000), fileUpl: fileUpl}
 }
 
 func (u *userMongo) Domain() *domain.User {

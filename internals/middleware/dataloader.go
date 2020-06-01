@@ -15,34 +15,44 @@ type dataLoaderKey uint16
 const userDataLoaderKey = dataLoaderKey(1)
 const postDataLoaderKey = dataLoaderKey(2)
 
+func dataloaders(userRepository services.UserService, postRepository services.PostService) (*dataloader.UserLoader, *dataloader.PostLoader) {
+	userLoaderConfig := dataloader.UserLoaderConfig{
+		MaxBatch: 100,
+		Wait:     1 * time.Millisecond,
+		Fetch: func(ids []string) ([]*domain.User, []error) {
+			var users []*domain.User
+			// * NOTE (GABI): Maybe change this context.Background() to another thing
+			users, err := userRepository.FindByIDs(context.Background(), ids)
+			return users, []error{err}
+		},
+	}
+	postLoaderConfig := dataloader.PostLoaderConfig{
+		MaxBatch: 100,
+		Wait:     1 * time.Millisecond,
+		Fetch: func(ids []string) ([][]*domain.Post, []error) {
+			// * NOTE (GABI): Maybe change this context.Background() to another thing
+			posts, err := postRepository.GetPostsFromUsers(context.Background(), ids)
+			return posts, []error{err}
+		},
+	}
+	userLoader := dataloader.NewUserLoader(userLoaderConfig)
+	postLoader := dataloader.NewPostLoader(postLoaderConfig)
+	return userLoader, postLoader
+}
+
 // DataloaderMiddleware is the middleware for adding all the dataloader middleware
-func DataloaderMiddleware(next http.Handler, userRepository services.UserService, postRepository services.PostService) http.Handler {
+func DataloaderMiddleware(next http.Handler, userRepository services.UserService, postRepository services.PostService) (http.Handler, func(ctx context.Context) context.Context) {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		userLoaderConfig := dataloader.UserLoaderConfig{
-			MaxBatch: 100,
-			Wait:     1 * time.Millisecond,
-			Fetch: func(ids []string) ([]*domain.User, []error) {
-				var users []*domain.User
-				// * NOTE (GABI): Maybe change this context.Background() to another thing
-				users, err := userRepository.FindByIDs(context.Background(), ids)
-				return users, []error{err}
-			},
+			userLoader, postLoader := dataloaders(userRepository, postRepository)
+			tx := context.WithValue(r.Context(), userDataLoaderKey, userLoader)
+			tx = context.WithValue(tx, postDataLoaderKey, postLoader)
+			next.ServeHTTP(w, r.WithContext(tx))
+		}), func(ctx context.Context) context.Context {
+			userLoader, postLoader := dataloaders(userRepository, postRepository)
+			tx := context.WithValue(ctx, userDataLoaderKey, userLoader)
+			tx = context.WithValue(tx, postDataLoaderKey, postLoader)
+			return tx
 		}
-		postLoaderConfig := dataloader.PostLoaderConfig{
-			MaxBatch: 100,
-			Wait:     1 * time.Millisecond,
-			Fetch: func(ids []string) ([][]*domain.Post, []error) {
-				// * NOTE (GABI): Maybe change this context.Background() to another thing
-				posts, err := postRepository.GetPostsFromUsers(context.Background(), ids)
-				return posts, []error{err}
-			},
-		}
-		userLoader := dataloader.NewUserLoader(userLoaderConfig)
-		postLoader := dataloader.NewPostLoader(postLoaderConfig)
-		tx := context.WithValue(r.Context(), userDataLoaderKey, userLoader)
-		tx = context.WithValue(tx, postDataLoaderKey, postLoader)
-		next.ServeHTTP(w, r.WithContext(tx))
-	})
 }
 
 // DataLoaderUser returns a userloader from the context

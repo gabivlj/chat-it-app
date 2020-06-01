@@ -1,7 +1,14 @@
 package repository
 
 import (
+	"context"
+	"fmt"
+	"log"
+
+	"github.com/gabivlj/chat-it/internals/constants"
 	"github.com/gabivlj/chat-it/internals/domain"
+	"github.com/gabivlj/chat-it/internals/graphql/model"
+	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 )
@@ -25,6 +32,39 @@ func (p *messageMongo) Domain() *domain.Message {
 	return &domain.Message{Text: p.Text, UserID: p.UserID, CreatedAt: p.CreatedAt, PostID: p.PostID, ID: p.ID.Hex()}
 }
 
-func newMessageRepository(db *mongo.Database, client *mongo.Client, fileUpl *CloudStorageImages) *MessageRepository {
-	return &MessageRepository{db: db, client: client, messagesCollection: db.Collection("messages")}
+func newMessageRepository(db *mongo.Database, client *mongo.Client) *MessageRepository {
+	coll := db.Collection("messages")
+	name, err := coll.Indexes().CreateOne(context.Background(), mongo.IndexModel{Keys: bson.M{"userId": 1}})
+	log.Printf("repository - messages.go: tried creating indexes on userId, name: %s, err: %v", name, err)
+	name, err = coll.Indexes().CreateOne(context.Background(), mongo.IndexModel{Keys: bson.M{"postId": 1}})
+	log.Printf("repository - messages.go: tried creating indexes on postId, name: %s, err: %v", name, err)
+	return &MessageRepository{db: db, client: client, messagesCollection: coll}
+}
+
+// GetMessages returns the messages of the chat
+func (m *MessageRepository) GetMessages(ctx context.Context, params *model.Params) ([]*domain.Message, error) {
+	options, query, err := parsePagination(params)
+	if err != nil {
+		return nil, err
+	}
+	options.Sort = constants.SortDescendingCreatedAt
+	results, err := m.messagesCollection.Find(ctx, query, options)
+	if err != nil {
+		return nil, err
+	}
+	mongoMessages := []messageMongo{}
+	err = results.All(ctx, &mongoMessages)
+	if err != nil {
+		return nil, err
+	}
+	messages := make([]*domain.Message, 0, len(mongoMessages))
+	for idx := range mongoMessages {
+		messages = append(messages, mongoMessages[idx].Domain())
+	}
+	return messages, nil
+}
+
+// SaveMessage saves the message in the database
+func (m *MessageRepository) SaveMessage(ctx context.Context, postID, userID, text string) (*domain.Message, error) {
+	return nil, fmt.Errorf("messages.go: not implemented")
 }

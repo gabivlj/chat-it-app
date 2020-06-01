@@ -1,7 +1,6 @@
 package graphql
 
 import (
-	"github.com/gabivlj/chat-it/internals/repository"
 	"github.com/gabivlj/chat-it/internals/services"
 )
 
@@ -9,9 +8,12 @@ import (
 type Resolver struct {
 	userRepo services.UserService
 	postRepo services.PostService
+
+	connectionsPosts  services.ConnectionService
+	messageRepository services.MessageService
 }
 
-// New returns a new resolver
-func New(u services.UserService, p *repository.PostRepository) *Resolver {
-	return &Resolver{userRepo: u, postRepo: p}
+// New returns a new resolver todo: Use services
+func New(u services.UserService, p services.PostService, c services.ConnectionService, m services.MessageService) *Resolver {
+	return &Resolver{userRepo: u, postRepo: p, connectionsPosts: c, messageRepository: m}
 }

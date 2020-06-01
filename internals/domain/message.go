@@ -7,4 +7,7 @@ type Message struct {
 	Text      string `json:"text"`
 	UserID    string `json:"userId"`
 	PostID    string `json:"postId"`
+
+	Post *Post `json:"post"`
+	User *User `json:"user"`
 }

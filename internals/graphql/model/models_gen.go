@@ -3,6 +3,10 @@
 package model
 
 import (
+	"fmt"
+	"io"
+	"strconv"
+
 	"github.com/99designs/gqlgen/graphql"
 	"github.com/gabivlj/chat-it/internals/domain"
 )
@@ -32,4 +36,47 @@ type UserQuery struct {
 type UserSession struct {
 	User    *domain.User `json:"user"`
 	Session string       `json:"session"`
+}
+
+type TypeOfMessage string
+
+const (
+	TypeOfMessageConnection TypeOfMessage = "CONNECTION"
+	TypeOfMessageMessage    TypeOfMessage = "MESSAGE"
+	TypeOfMessageExit       TypeOfMessage = "EXIT"
+)
+
+var AllTypeOfMessage = []TypeOfMessage{
+	TypeOfMessageConnection,
+	TypeOfMessageMessage,
+	TypeOfMessageExit,
+}
+
+func (e TypeOfMessage) IsValid() bool {
+	switch e {
+	case TypeOfMessageConnection, TypeOfMessageMessage, TypeOfMessageExit:
+		return true
+	}
+	return false
+}
+
+func (e TypeOfMessage) String() string {
+	return string(e)
+}
+
+func (e *TypeOfMessage) UnmarshalGQL(v interface{}) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = TypeOfMessage(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid TypeOfMessage", str)
+	}
+	return nil
+}
+
+func (e TypeOfMessage) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
 }

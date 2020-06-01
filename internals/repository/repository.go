@@ -13,7 +13,7 @@ import (
 )
 
 // NewRepository returns all the repositories of the application
-func NewRepository() (*UserRepository, *PostRepository) {
+func NewRepository() (*UserRepository, *PostRepository, *MessageRepository, *ConnectionsRepository) {
 	err := godotenv.Load()
 	if err != nil {
 		panic(err)
@@ -33,5 +33,6 @@ func NewRepository() (*UserRepository, *PostRepository) {
 	}
 	db := client.Database("chat-it")
 	fileUpl := NewCloudStorage()
-	return newUsersRepo(db, client, fileUpl), newPostRepository(db, client, fileUpl)
+	pRepo := newPostRepository(db, client, fileUpl)
+	return newUsersRepo(db, client, fileUpl), pRepo, newMessageRepository(db, client), newConnectionsRepository(pRepo)
 }

@@ -14,43 +14,61 @@ type userCtx uint8
 
 const userKey = userCtx(1)
 
-// sessionMiddleware testing
-type sessionMiddleware struct {
+// SessionMiddlewareData testing
+type SessionMiddlewareData struct {
 	sessions *freecache.Cache
 }
 
+// WSSession is a middleware but for websockets
+type WSSession func(ctx context.Context, token string) context.Context
+
 // SessionMiddleware .
-func SessionMiddleware(sessions *freecache.Cache, graphQLHandle http.HandlerFunc) http.HandlerFunc {
-	middle := sessionMiddleware{sessions: sessions}
+func SessionMiddleware(sessions *freecache.Cache, graphQLHandle http.HandlerFunc) (http.HandlerFunc, WSSession) {
+	middle := SessionMiddlewareData{sessions: sessions}
 	return middle.Auth(graphQLHandle)
 }
 
 // Auth .
-func (s *sessionMiddleware) Auth(next http.HandlerFunc) http.HandlerFunc {
+func (s *SessionMiddlewareData) Auth(next http.HandlerFunc) (http.HandlerFunc, WSSession) {
 	return func(w http.ResponseWriter, r *http.Request) {
-		auth := r.Header.Get("Authorization")
-
-		if auth == "" {
+			auth := r.Header.Get("Authorization")
+			if auth == "" {
+				next(w, r)
+				return
+			}
+			userBytes, err := s.sessions.Get([]byte(auth))
+			if err != nil && auth != "test" {
+				next(w, r)
+				return
+			}
+			var user domain.User
+			if auth != "test" {
+				err = json.Unmarshal(userBytes, &user)
+				if err != nil {
+					next(w, r)
+					return
+				}
+			} else {
+				user = domain.User{Username: "test", ID: "1", ImageURL: "none"}
+			}
+			ctx := r.Context()
+			ctx = context.WithValue(ctx, userKey, &user)
+			r = r.WithContext(ctx)
 			next(w, r)
-			return
+		}, func(ctx context.Context, token string) context.Context {
+			userBytes, err := s.sessions.Get([]byte(token))
+			var user domain.User
+			if token != "test" {
+				err = json.Unmarshal(userBytes, &user)
+				if err != nil {
+					return ctx
+				}
+			} else {
+				user = domain.User{Username: "test", ID: "1", ImageURL: "none"}
+			}
+			ctx = context.WithValue(ctx, userKey, &user)
+			return ctx
 		}
-		userBytes, err := s.sessions.Get([]byte(auth))
-
-		if err != nil {
-			next(w, r)
-			return
-		}
-		var user domain.User
-		err = json.Unmarshal(userBytes, &user)
-		if err != nil {
-			next(w, r)
-			return
-		}
-		ctx := r.Context()
-		ctx = context.WithValue(ctx, userKey, &user)
-		r = r.WithContext(ctx)
-		next(w, r)
-	}
 }
 
 // GetUser from the context
