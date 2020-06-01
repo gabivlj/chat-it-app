@@ -5,14 +5,22 @@ package graphql
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/gabivlj/chat-it/internals/domain"
 	generated1 "github.com/gabivlj/chat-it/internals/graphql/generated"
 	"github.com/gabivlj/chat-it/internals/middleware"
 )
 
+// TODO Security meassure: send a paseto token instead of a userID when mutating, because
 func (r *mutationResolver) SendMessage(ctx context.Context, text string, postID string, userID string) (*domain.Message, error) {
-	return r.connectionsPosts.SendMessage(ctx, postID, userID, text)
+	user, err := middleware.GetUser(ctx)
+	fmt.Println(user)
+	if err != nil {
+		return nil, err
+	}
+
+	return r.connectionsPosts.SendMessage(ctx, postID, user.ID, text)
 }
 
 func (r *subscriptionResolver) NewMessage(ctx context.Context, postID string) (<-chan *domain.Message, error) {

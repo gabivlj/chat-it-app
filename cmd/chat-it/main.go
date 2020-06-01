@@ -48,7 +48,7 @@ func main() {
 	log.Printf("connect to http://localhost:%s/ for GraphQL playground", port)
 
 	// !! Test websockets
-	testWs(srv)
+	// testWs(srv)
 
 	log.Fatal(http.ListenAndServe(":"+port, nil))
 }

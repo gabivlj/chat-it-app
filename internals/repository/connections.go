@@ -78,6 +78,7 @@ func (c *ConnectionsRepository) SendMessage(ctx context.Context, postID string, 
 	}
 	msg.User = user.User
 	for _, observer := range postConn.Observers {
+		fmt.Println(observer)
 		observer.NewMessage <- msg
 	}
 	postConn.mu.Unlock()
