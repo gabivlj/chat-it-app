@@ -23,25 +23,33 @@ import (
 const defaultPort = "8080"
 
 func main() {
-	// user := repository.NewRepository()
-	// fmt.Println(user.SaveUser(context.TODO(), &domain.User{Username: "GABI", Password: "mhm?"}))
-
 	port := os.Getenv("PORT")
 	if port == "" {
 		port = defaultPort
 	}
+
+	// App repositories
 	userRepo, postRepo, msgRepo, repoConnections := repository.NewRepository()
+
+	// Schema and resolver loading
 	graphqlHandler := generated.NewExecutableSchema(generated.Config{Resolvers: graphql.New(userRepo, postRepo, repoConnections, msgRepo), Directives: *graphql.NewDirectives()})
+
+	// Initialize handler
 	srv := handler.New(graphqlHandler)
+
+	// Middleware and transports
 	middlewareDataloadenHTTP, middlewareDataloadenWebSockets := middleware.DataloaderMiddleware(srv, userRepo, postRepo)
 	middlewareHTTP, middlewareSessionsWebsockets := middleware.SessionMiddleware(userRepo.Sessions, middlewareDataloadenHTTP.ServeHTTP)
 	addTransports(srv, middlewareSessionsWebsockets, middlewareDataloadenWebSockets)
 
+	// Handle everything
 	http.Handle("/", playground.Handler("GraphQL playground", "/query"))
 	http.Handle("/query", middlewareHTTP)
-
 	log.Printf("connect to http://localhost:%s/ for GraphQL playground", port)
+
+	// !! Test websockets
 	testWs(srv)
+
 	log.Fatal(http.ListenAndServe(":"+port, nil))
 }
 
@@ -68,10 +76,8 @@ func addTransports(srv *handler.Server, middlewareWebsocketsSession func(ctx con
 	srv.AddTransport(transport.POST{})
 	srv.AddTransport(transport.MultipartForm{})
 	srv.SetQueryCache(lru.New(1000))
-
 	srv.Use(extension.Introspection{})
 	srv.Use(extension.AutomaticPersistedQuery{
 		Cache: lru.New(100),
 	})
-
 }

@@ -6,9 +6,8 @@ import (
 
 // Resolver stores the dependencies and resolves the Graphql dependencies
 type Resolver struct {
-	userRepo services.UserService
-	postRepo services.PostService
-
+	userRepo          services.UserService
+	postRepo          services.PostService
 	connectionsPosts  services.ConnectionService
 	messageRepository services.MessageService
 }

@@ -1,5 +1,9 @@
 package middleware
 
+// ! warning: Delete the "test" user in the future
+// ! warning: Delete the "test" user in the future
+// ! warning: Delete the "test" user in the future
+
 import (
 	"context"
 	"encoding/json"
@@ -55,7 +59,8 @@ func (s *SessionMiddlewareData) Auth(next http.HandlerFunc) (http.HandlerFunc, W
 			ctx = context.WithValue(ctx, userKey, &user)
 			r = r.WithContext(ctx)
 			next(w, r)
-		}, func(ctx context.Context, token string) context.Context {
+		}, func(ctx context.Context, token string) context.Context { // The same as before but simplified
+			// I might reduce code by simplyfing in a single fn but right now for this case works
 			userBytes, err := s.sessions.Get([]byte(token))
 			var user domain.User
 			if token != "test" {
