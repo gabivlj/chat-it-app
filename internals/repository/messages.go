@@ -2,8 +2,8 @@ package repository
 
 import (
 	"context"
-	"fmt"
 	"log"
+	"time"
 
 	"github.com/gabivlj/chat-it/internals/constants"
 	"github.com/gabivlj/chat-it/internals/domain"
@@ -42,8 +42,9 @@ func newMessageRepository(db *mongo.Database, client *mongo.Client) *MessageRepo
 }
 
 // GetMessages returns the messages of the chat
-func (m *MessageRepository) GetMessages(ctx context.Context, params *model.Params) ([]*domain.Message, error) {
+func (m *MessageRepository) GetMessages(ctx context.Context, postID string, params *model.Params) ([]*domain.Message, error) {
 	options, query, err := parsePagination(params)
+	query["postId"] = postID
 	if err != nil {
 		return nil, err
 	}
@@ -66,5 +67,11 @@ func (m *MessageRepository) GetMessages(ctx context.Context, params *model.Param
 
 // SaveMessage saves the message in the database
 func (m *MessageRepository) SaveMessage(ctx context.Context, postID, userID, text string) (*domain.Message, error) {
-	return nil, fmt.Errorf("messages.go: not implemented")
+	msg := messageMongo{PostID: postID, UserID: userID, Text: text, CreatedAt: time.Now().Unix()}
+	res, err := m.messagesCollection.InsertOne(ctx, msg)
+	if err != nil {
+		return nil, err
+	}
+	msg.ID = res.InsertedID.(primitive.ObjectID)
+	return msg.Domain(), nil
 }

@@ -46,7 +46,7 @@ func (s *SessionMiddlewareData) Auth(next http.HandlerFunc) (http.HandlerFunc, W
 				return
 			}
 			var user domain.User
-
+			// TODO Remove this
 			if auth != "test" {
 				err = json.Unmarshal(userBytes, &user)
 				if err != nil {

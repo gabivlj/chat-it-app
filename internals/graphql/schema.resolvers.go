@@ -4,36 +4,10 @@ package graphql
 // will be copied through when generating and any unknown code will be moved to the end.
 
 import (
-	"context"
-	"fmt"
-
-	"github.com/gabivlj/chat-it/internals/domain"
 	generated1 "github.com/gabivlj/chat-it/internals/graphql/generated"
-	"github.com/gabivlj/chat-it/internals/middleware"
 )
 
-// TODO Security meassure: send a paseto token instead of a userID when mutating, because
-func (r *mutationResolver) SendMessage(ctx context.Context, text string, postID string, userID string) (*domain.Message, error) {
-	user, err := middleware.GetUser(ctx)
-	fmt.Println(user)
-	if err != nil {
-		return nil, err
-	}
-
-	return r.connectionsPosts.SendMessage(ctx, postID, user.ID, text)
-}
-
-func (r *subscriptionResolver) NewMessage(ctx context.Context, postID string) (<-chan *domain.Message, error) {
-	user, err := middleware.GetUser(ctx)
-	if err != nil {
-		return nil, err
-	}
-	// if err != nil {
-
-	// 	return nil, err
-	// }
-	return r.connectionsPosts.NewUser(ctx, user, postID)
-}
+// TODO remove userID.
 
 // Image returns generated1.ImageResolver implementation.
 func (r *Resolver) Image() generated1.ImageResolver { return &imageResolver{r} }

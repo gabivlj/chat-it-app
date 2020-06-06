@@ -2,9 +2,9 @@ package graphql
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/gabivlj/chat-it/internals/domain"
+	"github.com/gabivlj/chat-it/internals/graphql/model"
 	"github.com/gabivlj/chat-it/internals/middleware"
 )
 
@@ -16,7 +16,7 @@ func (r *postResolver) Image(ctx context.Context, obj *domain.Post) (*domain.Ima
 	return &domain.Image{URLMD: obj.URLImage, URLXL: obj.URLImage, URLSM: obj.URLImage}, nil
 }
 
-// TODO dataLoader for []postIDS
+// TODO dataLoader
 func (r *postResolver) Chat(ctx context.Context, obj *domain.Post) ([]*domain.Message, error) {
-	panic(fmt.Errorf("not implemented"))
+	return r.messageRepository.GetMessages(ctx, obj.ID, &model.Params{Limit: 10})
 }

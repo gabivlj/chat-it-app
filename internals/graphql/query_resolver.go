@@ -32,7 +32,7 @@ func (r *queryResolver) ImageFromObject(ctx context.Context, objectID string) (*
 }
 
 func (r *queryResolver) MessagesPost(ctx context.Context, id string, params *model.Params) ([]*domain.Message, error) {
-	panic(fmt.Errorf("not implemented"))
+	return r.messageRepository.GetMessages(ctx, id, params)
 }
 
 func (r *queryResolver) PostsUser(ctx context.Context, id string, params *model.Params) ([]*domain.Post, error) {

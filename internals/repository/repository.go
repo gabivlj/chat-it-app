@@ -34,5 +34,6 @@ func NewRepository() (*UserRepository, *PostRepository, *MessageRepository, *Con
 	db := client.Database("chat-it")
 	fileUpl := NewCloudStorage()
 	pRepo := newPostRepository(db, client, fileUpl)
-	return newUsersRepo(db, client, fileUpl), pRepo, newMessageRepository(db, client), newConnectionsRepository(pRepo)
+	mRepo := newMessageRepository(db, client)
+	return newUsersRepo(db, client, fileUpl), pRepo, mRepo, newConnectionsRepository(pRepo, mRepo)
 }

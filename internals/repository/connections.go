@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"runtime/debug"
 	"sync"
-	"time"
 
 	"github.com/gabivlj/chat-it/internals/domain"
 	"github.com/gofrs/uuid"
@@ -14,15 +13,16 @@ import (
 // ConnectionsRepository handles all the connections for the app.
 type ConnectionsRepository struct {
 	connections map[string]PostConnections
+	messageRepo *MessageRepository
 	postRepo    *PostRepository
 	mu          *sync.Mutex
 }
 
 // newConnectionsRepository returns a new repository of connections
-func newConnectionsRepository(p *PostRepository) *ConnectionsRepository {
+func newConnectionsRepository(p *PostRepository, m *MessageRepository) *ConnectionsRepository {
 	// 1024 * 1024 => single MB
 	debug.SetGCPercent(20)
-	return &ConnectionsRepository{connections: make(map[string]PostConnections, 1000), postRepo: p, mu: &sync.Mutex{}}
+	return &ConnectionsRepository{connections: make(map[string]PostConnections, 1000), postRepo: p, mu: &sync.Mutex{}, messageRepo: m}
 }
 
 // PostConnections .
@@ -64,11 +64,19 @@ func tempunwrap(s uuid.UUID, err error) string {
 
 // SendMessage sends a message across the app
 func (c *ConnectionsRepository) SendMessage(ctx context.Context, postID string, userFrom string, text string) (*domain.Message, error) {
-	msg := &domain.Message{User: nil, Text: text, CreatedAt: time.Now().Unix(), ID: tempunwrap(uuid.NewV4())}
+	msg, err := c.messageRepo.SaveMessage(ctx, postID, userFrom, text)
+	if err != nil {
+		return nil, err
+	}
 	c.mu.Lock()
 	postConn, k := c.connections[postID]
 	if !k {
-		return nil, fmt.Errorf("No post")
+		post, err := c.postRepo.GetPost(ctx, postID)
+		if err != nil {
+			return nil, err
+		}
+		c.connections[postID] = PostConnections{Post: post, Observers: map[string]Observer{userFrom: {User: &domain.User{ID: userFrom}, NewMessage: make(chan *domain.Message, 1)}}, mu: &sync.Mutex{}}
+		postConn = c.connections[postID]
 	}
 	c.mu.Unlock()
 	postConn.mu.Lock()
@@ -78,7 +86,6 @@ func (c *ConnectionsRepository) SendMessage(ctx context.Context, postID string, 
 	}
 	msg.User = user.User
 	for _, observer := range postConn.Observers {
-		fmt.Println(observer)
 		observer.NewMessage <- msg
 	}
 	postConn.mu.Unlock()
