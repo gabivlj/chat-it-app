@@ -43,8 +43,8 @@ func main() {
 	addTransports(srv, middlewareSessionsWebsockets, middlewareDataloadenWebSockets)
 
 	// Handle everything
-	http.Handle("/", playground.Handler("GraphQL playground", "/query"))
-	http.Handle("/query", middlewareHTTP)
+	http.Handle("/", middleware.Cors(playground.Handler("GraphQL playground", "/query")))
+	http.Handle("/query", middleware.Cors(middlewareHTTP))
 	log.Printf("connect to http://localhost:%s/ for GraphQL playground", port)
 
 	// !! Test websockets
@@ -56,11 +56,34 @@ func main() {
 func addTransports(srv *handler.Server, middlewareWebsocketsSession func(ctx context.Context, token string) context.Context, middlewareWebsocketsDataLoader func(context.Context) context.Context) {
 	srv.AddTransport(transport.Websocket{
 		InitFunc: func(ctx context.Context, initPayload transport.InitPayload) (context.Context, error) {
-			token := initPayload.Authorization()
+			fmt.Println(initPayload.GetString("Authorization"), initPayload)
+			token := initPayload.GetString("Authorization")
+			// If the authorization param is empty
+			if token == "" {
+				headers := initPayload["headers"]
+				if headers == nil {
+					return nil, fmt.Errorf("Unauthorized")
+				}
+				headersMap, k := headers.(map[string]interface{})
+				if !k {
+					return nil, fmt.Errorf("Unauthorized")
+				}
+				header, k := headersMap["Authorization"]
+				if !k {
+					return nil, fmt.Errorf("Unauthorized")
+				}
+				headerStr, k := header.(string)
+				if k {
+					token = headerStr
+				}
+			}
 			tx := middlewareWebsocketsSession(ctx, token)
 			tx = middlewareWebsocketsDataLoader(tx)
 			user, err := middleware.GetUser(tx)
 			fmt.Println(user, err)
+			if err != nil {
+				return nil, err
+			}
 			return tx, nil
 		},
 		KeepAlivePingInterval: 10 * time.Second,

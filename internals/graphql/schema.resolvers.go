@@ -4,10 +4,17 @@ package graphql
 // will be copied through when generating and any unknown code will be moved to the end.
 
 import (
+	"context"
+
 	generated1 "github.com/gabivlj/chat-it/internals/graphql/generated"
+	"github.com/gabivlj/chat-it/internals/graphql/model"
+	"github.com/gabivlj/chat-it/internals/middleware"
 )
 
-// TODO remove userID.
+func (r *queryResolver) Loged(ctx context.Context) (*model.Loged, error) {
+	user, _ := middleware.GetUser(ctx)
+	return &model.Loged{User: user, Loged: user != nil}, nil
+}
 
 // Image returns generated1.ImageResolver implementation.
 func (r *Resolver) Image() generated1.ImageResolver { return &imageResolver{r} }

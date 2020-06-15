@@ -59,6 +59,11 @@ type ComplexityRoot struct {
 		User  func(childComplexity int) int
 	}
 
+	Loged struct {
+		Loged func(childComplexity int) int
+		User  func(childComplexity int) int
+	}
+
 	Message struct {
 		CreatedAt func(childComplexity int) int
 		ID        func(childComplexity int) int
@@ -88,6 +93,7 @@ type ComplexityRoot struct {
 	Query struct {
 		Image           func(childComplexity int, id string) int
 		ImageFromObject func(childComplexity int, objectID string) int
+		Loged           func(childComplexity int) int
 		MessagesPost    func(childComplexity int, id string, params *model.Params) int
 		Post            func(childComplexity int, id string) int
 		Posts           func(childComplexity int, params *model.Params) int
@@ -143,6 +149,7 @@ type QueryResolver interface {
 	User(ctx context.Context, id model.UserQuery) (*domain.User, error)
 	Users(ctx context.Context) ([]*domain.User, error)
 	Posts(ctx context.Context, params *model.Params) ([]*domain.Post, error)
+	Loged(ctx context.Context) (*model.Loged, error)
 }
 type SubscriptionResolver interface {
 	NewMessage(ctx context.Context, postID string) (<-chan *domain.Message, error)
@@ -201,6 +208,20 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Image.User(childComplexity), true
+
+	case "Loged.loged":
+		if e.complexity.Loged.Loged == nil {
+			break
+		}
+
+		return e.complexity.Loged.Loged(childComplexity), true
+
+	case "Loged.user":
+		if e.complexity.Loged.User == nil {
+			break
+		}
+
+		return e.complexity.Loged.User(childComplexity), true
 
 	case "Message.createdAt":
 		if e.complexity.Message.CreatedAt == nil {
@@ -369,6 +390,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Query.ImageFromObject(childComplexity, args["objectID"].(string)), true
+
+	case "Query.loged":
+		if e.complexity.Query.Loged == nil {
+			break
+		}
+
+		return e.complexity.Query.Loged(childComplexity), true
 
 	case "Query.messagesPost":
 		if e.complexity.Query.MessagesPost == nil {
@@ -618,6 +646,11 @@ input UserQuery {
   id: ID
 }
 
+type Loged {
+  loged: Boolean!
+  user: User
+}
+
 type Query {
   image(id: ID!): Image!
   imageFromObject(objectID: ID!): Image!
@@ -627,6 +660,7 @@ type Query {
   user(id: UserQuery!): User!
   users: [User!]!
   posts(params: Params): [Post!]!
+  loged: Loged!
 }
 
 input FormLogInRegister {
@@ -1140,6 +1174,71 @@ func (ec *executionContext) _Image_user(ctx context.Context, field graphql.Colle
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
 		return ec.resolvers.Image().User(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*domain.User)
+	fc.Result = res
+	return ec.marshalOUser2ᚖgithubᚗcomᚋgabivljᚋchatᚑitᚋinternalsᚋdomainᚐUser(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Loged_loged(ctx context.Context, field graphql.CollectedField, obj *model.Loged) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Loged",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Loged, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(bool)
+	fc.Result = res
+	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Loged_user(ctx context.Context, field graphql.CollectedField, obj *model.Loged) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Loged",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.User, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -2082,6 +2181,40 @@ func (ec *executionContext) _Query_posts(ctx context.Context, field graphql.Coll
 	res := resTmp.([]*domain.Post)
 	fc.Result = res
 	return ec.marshalNPost2ᚕᚖgithubᚗcomᚋgabivljᚋchatᚑitᚋinternalsᚋdomainᚐPostᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Query_loged(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Query",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().Loged(rctx)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*model.Loged)
+	fc.Result = res
+	return ec.marshalNLoged2ᚖgithubᚗcomᚋgabivljᚋchatᚑitᚋinternalsᚋgraphqlᚋmodelᚐLoged(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Query___type(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -3635,6 +3768,35 @@ func (ec *executionContext) _Image(ctx context.Context, sel ast.SelectionSet, ob
 	return out
 }
 
+var logedImplementors = []string{"Loged"}
+
+func (ec *executionContext) _Loged(ctx context.Context, sel ast.SelectionSet, obj *model.Loged) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, logedImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("Loged")
+		case "loged":
+			out.Values[i] = ec._Loged_loged(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "user":
+			out.Values[i] = ec._Loged_user(ctx, field, obj)
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
 var messageImplementors = []string{"Message"}
 
 func (ec *executionContext) _Message(ctx context.Context, sel ast.SelectionSet, obj *domain.Message) graphql.Marshaler {
@@ -3954,6 +4116,20 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 					}
 				}()
 				res = ec._Query_posts(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			})
+		case "loged":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_loged(ctx, field)
 				if res == graphql.Null {
 					atomic.AddUint32(&invalids, 1)
 				}
@@ -4396,6 +4572,20 @@ func (ec *executionContext) marshalNInt2int64(ctx context.Context, sel ast.Selec
 		}
 	}
 	return res
+}
+
+func (ec *executionContext) marshalNLoged2githubᚗcomᚋgabivljᚋchatᚑitᚋinternalsᚋgraphqlᚋmodelᚐLoged(ctx context.Context, sel ast.SelectionSet, v model.Loged) graphql.Marshaler {
+	return ec._Loged(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNLoged2ᚖgithubᚗcomᚋgabivljᚋchatᚑitᚋinternalsᚋgraphqlᚋmodelᚐLoged(ctx context.Context, sel ast.SelectionSet, v *model.Loged) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	return ec._Loged(ctx, sel, v)
 }
 
 func (ec *executionContext) marshalNMessage2githubᚗcomᚋgabivljᚋchatᚑitᚋinternalsᚋdomainᚐMessage(ctx context.Context, sel ast.SelectionSet, v domain.Message) graphql.Marshaler {

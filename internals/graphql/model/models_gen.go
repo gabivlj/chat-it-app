@@ -16,6 +16,11 @@ type FormLogInRegister struct {
 	Password string `json:"password"`
 }
 
+type Loged struct {
+	Loged bool         `json:"loged"`
+	User  *domain.User `json:"user"`
+}
+
 type Params struct {
 	Before *string `json:"before"`
 	After  *string `json:"after"`

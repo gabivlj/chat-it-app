@@ -42,6 +42,11 @@ input UserQuery {
   id: ID
 }
 
+type Loged {
+  loged: Boolean!
+  user: User
+}
+
 type Query {
   image(id: ID!): Image!
   imageFromObject(objectID: ID!): Image!
@@ -51,6 +56,7 @@ type Query {
   user(id: UserQuery!): User!
   users: [User!]!
   posts(params: Params): [Post!]!
+  loged: Loged!
 }
 
 input FormLogInRegister {
