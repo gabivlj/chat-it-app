@@ -3,6 +3,7 @@ import { useQuery } from '@apollo/react-hooks';
 import { GetUser, GetUserVariables } from '../queries/types/GetUser';
 import { GET_USER } from '../queries/user_queries';
 import { TODO } from '../utils/todo';
+import ProfileCard from '../components/Profile/ProfileCard';
 
 type Props = {
   match: {
@@ -27,23 +28,16 @@ export default function Profile({ match }: Props) {
         }
       },
       onError: err => {
-        // todo: Handle
         TODO(`Handle error ${err}`);
       }
     }
   );
-  let posts = data && data.user.posts;
-  const user = data && data.user.username;
+  if (!data) {
+    return <div className="container">Loading...</div>;
+  }
   return (
     <div className="container">
-      <h2 className="text-xl">Username {user}</h2>
-      {posts &&
-        posts.map(post => (
-          <div key={post.title}>
-            {post.title} said {post.text}
-            <img src={post.image ? post.image.urlXL : ''}></img>
-          </div>
-        ))}
+      {loading ? <>Loading...</> : <ProfileCard user={data.user}></ProfileCard>}
     </div>
   );
 }

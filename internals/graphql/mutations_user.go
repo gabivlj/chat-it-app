@@ -2,6 +2,7 @@ package graphql
 
 import (
 	"context"
+	"errors"
 
 	"github.com/99designs/gqlgen/graphql"
 	"github.com/gabivlj/chat-it/internals/domain"
@@ -26,6 +27,9 @@ func (r *mutationResolver) LogUser(ctx context.Context, parameters *model.FormLo
 }
 
 func (r *mutationResolver) NewProfileImage(ctx context.Context, image graphql.Upload) (*domain.User, error) {
+	if image.Size >= 1000000 {
+		return nil, errors.New("image size too big")
+	}
 	user, err := middleware.GetUser(ctx)
 	if err != nil {
 		return nil, err

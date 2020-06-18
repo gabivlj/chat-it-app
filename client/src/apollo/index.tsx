@@ -5,6 +5,7 @@ import { WebSocketLink } from 'apollo-link-ws';
 import { split } from 'apollo-link';
 import { getMainDefinition } from 'apollo-utilities';
 import { setContext } from 'apollo-link-context';
+import { createUploadLink } from 'apollo-upload-client';
 import { mutationResolvers } from './mutation_resolvers';
 
 const wsLink = new WebSocketLink({
@@ -23,7 +24,7 @@ const wsLink = new WebSocketLink({
 });
 
 export const cache = new InMemoryCache();
-const httpLink = new HttpLink({
+const httpLink = createUploadLink({
   uri: 'http://localhost:8080/query'
 });
 

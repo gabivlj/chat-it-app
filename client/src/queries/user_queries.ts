@@ -78,3 +78,14 @@ export const GET_USER = gql`
     }
   }
 `;
+
+export const UPLOAD_PROFILE_IMAGE = gql`
+  mutation newImage($image: Upload!) {
+    newProfileImage(image: $image) {
+      id
+      profileImage {
+        urlXL
+      }
+    }
+  }
+`;
