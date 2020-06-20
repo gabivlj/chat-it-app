@@ -12,6 +12,12 @@ export interface FormLogInRegister {
   password: string;
 }
 
+export interface Params {
+  before?: string | null;
+  after?: string | null;
+  limit: number;
+}
+
 export interface UserQuery {
   username?: string | null;
   id?: string | null;

@@ -74,6 +74,7 @@ export const GET_USER = gql`
           urlXL
         }
         title
+        id
       }
     }
   }

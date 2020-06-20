@@ -24,6 +24,7 @@ export interface GetUser_user_posts {
   text: string;
   image: GetUser_user_posts_image | null;
   title: string;
+  id: string;
 }
 
 export interface GetUser_user {

@@ -1,5 +1,6 @@
 import React from 'react';
 import { GetUser_user_posts } from '../../queries/types/GetUser';
+import { Link } from 'react-router-dom';
 
 type Props = {
   post: GetUser_user_posts;
@@ -8,7 +9,7 @@ type Props = {
 export default function Post({ post }: Props) {
   return (
     <div className="w-full md:w-1/3 xl:w-1/4 p-6 flex flex-col">
-      <a href="#">
+      <Link to={`/post/${post.id}`}>
         <img
           className="hover:grow hover:shadow-lg"
           style={{ width: '20rem', height: '10rem' }}
@@ -18,7 +19,7 @@ export default function Post({ post }: Props) {
           <p className="">{post.title}</p>
         </div>
         <p className="pt-1 text-gray-900">{post.text.slice(0, 10)}...</p>
-      </a>
+      </Link>
     </div>
   );
 }
