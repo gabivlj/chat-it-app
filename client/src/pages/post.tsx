@@ -9,6 +9,8 @@ import { GET_POST_AND_MESSAGES } from '../queries/post_queries';
 import Message from '../components/Chat/Message';
 import { IS_LOGED_QUERY } from '../queries/user_queries';
 import { isLogged } from '../queries/types/isLogged';
+import Loading from '../components/Utils/Loading';
+import NotFound from '../components/Utils/NotFound';
 
 type Props = {
   match: {
@@ -18,14 +20,18 @@ type Props = {
   };
 };
 
-export default function Post({ match }: Props) {
+export default function Post({
+  match: {
+    params: { id }
+  }
+}: Props) {
   const resultIsLogged = useQuery<isLogged>(IS_LOGED_QUERY);
   const { data, loading, error, fetchMore } = useQuery<
     getPostAndMessages,
     getPostAndMessagesVariables
   >(GET_POST_AND_MESSAGES, {
     variables: {
-      id: match.params.id,
+      id,
       cursor: {
         limit: 10
       }
@@ -57,10 +63,10 @@ export default function Post({ match }: Props) {
   //   }, 2000);
   // }, [data]);
   if (loading) {
-    return <>Loading...</>;
+    return <Loading />;
   }
   if (error) {
-    return <>Error</>;
+    return <NotFound />;
   }
   if (!data) {
     return <></>;
