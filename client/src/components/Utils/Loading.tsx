@@ -1,6 +1,10 @@
 import React, { useEffect, useState } from 'react';
 
-export default function Loading() {
+type Props = {
+  className?: string;
+};
+
+export default function Loading({ className }: Props) {
   const [n, setN] = useState(0);
   useEffect(() => {
     let interval = setInterval(() => {
@@ -10,7 +14,7 @@ export default function Loading() {
   }, []);
 
   return (
-    <div className="container mt-3">
+    <div className={`container mt-3 ${className}`}>
       <div className="relative pt-1">
         <div className="flex mb-2 items-center ml-3">
           <div>
