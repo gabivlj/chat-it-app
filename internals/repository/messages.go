@@ -43,6 +43,7 @@ func newMessageRepository(db *mongo.Database, client *mongo.Client) *MessageRepo
 
 // GetMessages returns the messages of the chat
 func (m *MessageRepository) GetMessages(ctx context.Context, postID string, params *model.Params) ([]*domain.Message, error) {
+
 	options, query, err := parsePagination(params)
 	query["postId"] = postID
 	if err != nil {
@@ -67,7 +68,7 @@ func (m *MessageRepository) GetMessages(ctx context.Context, postID string, para
 
 // SaveMessage saves the message in the database
 func (m *MessageRepository) SaveMessage(ctx context.Context, postID, userID, text string) (*domain.Message, error) {
-	msg := messageMongo{PostID: postID, UserID: userID, Text: text, CreatedAt: time.Now().Unix()}
+	msg := messageMongo{PostID: postID, UserID: userID, Text: text, CreatedAt: time.Now().UnixNano()}
 	res, err := m.messagesCollection.InsertOne(ctx, msg)
 	if err != nil {
 		return nil, err

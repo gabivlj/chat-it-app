@@ -28,13 +28,14 @@ type Props = {
     };
   };
 };
-
+let dataLoaded = false;
 export default function Post({
   match: {
     params: { id }
   }
 }: Props) {
   const resultIsLogged = useQuery<isLogged>(IS_LOGED_QUERY);
+
   const { data, loading, error, fetchMore, subscribeToMore } = useQuery<
     getPostAndMessages,
     getPostAndMessagesVariables
@@ -48,6 +49,9 @@ export default function Post({
   });
   useEffect(() => {
     if (!data) return;
+    if (dataLoaded) return;
+    dataLoaded = true;
+    console.log('updated');
     subscribeToMore<onMessageAdded, onMessageAddedVariables>({
       document: SUBSCRIPTION_COMMENTS,
       variables: {
@@ -63,10 +67,10 @@ export default function Post({
     });
     const fetchMoreScroll = () => {
       // Check if we hitted bottom
-      if (
-        window.innerHeight + window.pageYOffset <
-        document.body.offsetHeight - 2
-      ) {
+      const d = document.documentElement;
+      const offset = d.scrollTop + window.innerHeight;
+      const height = d.offsetHeight;
+      if (offset !== height || loading || !data) {
         return;
       }
       fetchMore({
@@ -74,11 +78,29 @@ export default function Post({
           id: id,
           cursor: {
             limit: 5,
-            before: data && data.messagesPost[data.messagesPost.length - 1].id
+            before:
+              data && data.messagesPost.length
+                ? data.messagesPost[data.messagesPost.length - 1].id
+                : null
           }
         },
         updateQuery: (prev, { fetchMoreResult, variables }) => {
-          if (!fetchMoreResult) return prev;
+          if (!fetchMoreResult || !fetchMoreResult.messagesPost.length)
+            return prev;
+          if (
+            prev.messagesPost.filter(
+              p => p.id === fetchMoreResult.messagesPost[0].id
+            ).length > 0
+          ) {
+            console.warn(
+              'THERE ARE STILL ERRORS IN PAGINATION.',
+              prev.messagesPost,
+              fetchMoreResult.messagesPost
+            );
+            return Object.assign({}, prev, {
+              messagesPost: [...prev.messagesPost]
+            });
+          }
           return Object.assign({}, prev, {
             messagesPost: [
               ...prev.messagesPost,
@@ -88,9 +110,10 @@ export default function Post({
         }
       });
     };
-    window.addEventListener('scroll', fetchMoreScroll);
+    window.onscroll = fetchMoreScroll;
     return () => {
-      window.removeEventListener('scroll', fetchMoreScroll);
+      window.onscroll = () => {};
+      dataLoaded = false;
     };
   }, [data]);
   if (loading) {

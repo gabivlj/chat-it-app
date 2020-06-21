@@ -12,7 +12,7 @@ export default function Home() {
     {
       variables: {
         params: {
-          limit: 10
+          limit: 5
         }
       }
     }
@@ -20,12 +20,10 @@ export default function Home() {
   useEffect(() => {
     if (!data) return;
     const fetchMoreScroll = () => {
-      if (!data) return;
-      // Check if we hitted bottom
-      if (
-        window.innerHeight + window.pageYOffset <
-        document.body.offsetHeight - 2
-      ) {
+      const d = document.documentElement;
+      const offset = d.scrollTop + window.innerHeight;
+      const height = d.offsetHeight;
+      if (offset !== height || loading || !data) {
         return;
       }
       fetchMore({
