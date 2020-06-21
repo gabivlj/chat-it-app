@@ -18,7 +18,6 @@ export default function InputChat({ postId }: Props) {
     const text = input.trim();
     if (!text.length) {
       setInput('');
-
       return;
     }
     e.preventDefault();

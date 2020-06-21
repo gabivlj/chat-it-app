@@ -52,3 +52,22 @@ export const SEND_MESSAGE = gql`
     }
   }
 `;
+
+export const POST_FRONTPAGE = gql`
+  query posts($params: Params) {
+    posts(params: $params) {
+      text
+      id
+      title
+      image {
+        urlXL
+      }
+      user {
+        username
+        profileImage {
+          urlXL
+        }
+      }
+    }
+  }
+`;
