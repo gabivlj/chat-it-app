@@ -44,3 +44,11 @@ export const SUBSCRIPTION_COMMENTS = gql`
     }
   }
 `;
+
+export const SEND_MESSAGE = gql`
+  mutation sendMessage($text: String!, $postId: ID!) {
+    sendMessage(text: $text, postId: $postId, userId: "") {
+      text
+    }
+  }
+`;

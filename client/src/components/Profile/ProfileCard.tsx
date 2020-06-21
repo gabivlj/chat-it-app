@@ -12,6 +12,7 @@ import { newImage, newImageVariables } from '../../queries/types/newImage';
 import { TODO } from '../../utils/todo';
 import PostsProfile from '../Posts/PostsProfile';
 import { smoothScroll } from '../../utils/smoothScroll';
+import UploadFile from '../Inputs/UploadFile';
 
 type Props = {
   user: GetUser_user;
@@ -34,7 +35,7 @@ export default function ProfileCard({ user }: Props) {
     smoothScroll(posts);
   }
 
-  function onChange({
+  function onChangeFile({
     target: {
       validity,
       files: [file]
@@ -78,23 +79,19 @@ export default function ProfileCard({ user }: Props) {
 
             <div className="pt-12 pb-8">
               <button
-                className="bg-teal-700 hover:bg-teal-900 text-white font-bold py-2 px-4 rounded-full"
+                className="bg-teal-700 hover:bg-teal-900 text-white font-bold py-2 px-4 rounded-full mt-3"
                 onClick={onClickSeePosts}
               >
                 Show last posts
               </button>
-              <button className="bg-teal-700 hover:bg-teal-900 text-white font-bold py-2 px-4 rounded-full ml-3">
+              <button className="bg-teal-700 hover:bg-teal-900 text-white font-bold py-2 px-4 rounded-full ml-3 mt-3">
                 Show last comments
               </button>
               {data &&
               data.loged &&
               data.loged.user &&
               data.loged.user.username === user.username ? (
-                <input
-                  onChange={onChange}
-                  className="bg-teal-700 hover:bg-teal-900 text-white font-bold py-2 px-4 rounded-full ml-3 mt-3"
-                  type="file"
-                ></input>
+                <UploadFile onChange={onChangeFile} />
               ) : (
                 <></>
               )}

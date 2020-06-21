@@ -19,6 +19,7 @@ import {
   onMessageAddedVariables
 } from '../queries/types/onMessageAdded';
 import { userInfo } from 'os';
+import InputChat from '../components/Chat/InputChat';
 
 type Props = {
   match: {
@@ -108,7 +109,7 @@ export default function Post({
       <h1 className="font-bold pt-8 pl-3 text-5xl text-center mb-10">
         Live Comments
       </h1>
-      {!resultIsLogged.data || !resultIsLogged.data.loged.user ? (
+      {(!resultIsLogged.data || !resultIsLogged.data.loged.user) && (
         <div
           className={`rounded-lg p-2 bg-indigo-800 items-center text-indigo-100 leading-none  m-3 max-w-lg h-auto float-right clear-both w-lg sm:w-2/3 xl:w-1/3 md:w-1/3 lg:w-2/3 w-2/3`}
           role="alert"
@@ -129,8 +130,12 @@ export default function Post({
             viewBox="0 0 20 20"
           ></svg>
         </div>
-      ) : null}
+      )}
       <div className="container pt-3">
+        {resultIsLogged.data && resultIsLogged.data.loged.user && (
+          <InputChat postId={id} />
+        )}
+
         <div className="mt-3">
           {data.messagesPost.map(message => (
             <Message
