@@ -3,6 +3,7 @@ package repository
 import (
 	"context"
 	"errors"
+	"log"
 	"runtime/debug"
 	"sync"
 
@@ -52,6 +53,14 @@ func (c *ConnectionsRepository) NewUser(ctx context.Context, user *domain.User, 
 		conn = c.connections[postID]
 	}
 	c.mu.Unlock()
+	// Goroutine that will wait until the user disconnects
+	go func() {
+		<-ctx.Done()
+		conn.mu.Lock()
+		log.Println("User", user.Username, "disconnected from post", postID)
+		delete(conn.Observers, user.ID)
+		conn.mu.Unlock()
+	}()
 	connChann := make(chan *domain.Message, 1)
 	conn.mu.Lock()
 	conn.Observers[user.ID] = Observer{User: user, NewMessage: connChann}
@@ -77,7 +86,7 @@ func (c *ConnectionsRepository) SendMessage(ctx context.Context, postID string, 
 			c.mu.Unlock()
 			return nil, err
 		}
-		c.connections[postID] = PostConnections{Post: post, Observers: map[string]Observer{userFrom: {User: &domain.User{ID: userFrom}, NewMessage: make(chan *domain.Message, 1)}}, mu: &sync.Mutex{}}
+		c.connections[postID] = PostConnections{Post: post, Observers: map[string]Observer{}, mu: &sync.Mutex{}}
 		postConn = c.connections[postID]
 	}
 	c.mu.Unlock()
