@@ -43,7 +43,13 @@ export default function PostCard({ post }: Props) {
             <div className="mx-auto lg:mx-0 w-4/5 pt-3 border-b-2 border-teal-500 opacity-25"></div>
             <Link to={`/user/${post.user.username}`}>
               <p className="pt-4 text-base font-bold flex items-center justify-center lg:justify-start underline">
-                <Icon /> {post.user.username}
+                <img
+                  className="w-4 rounded-full mr-3"
+                  src={
+                    post.user.profileImage ? post.user.profileImage.urlXL : ''
+                  }
+                ></img>
+                {post.user.username}
               </p>
             </Link>
             <div className="mt-12 h-64 overflow-y-auto">

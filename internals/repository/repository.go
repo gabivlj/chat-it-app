@@ -35,5 +35,6 @@ func NewRepository() (*UserRepository, *PostRepository, *MessageRepository, *Con
 	fileUpl := NewCloudStorage()
 	pRepo := newPostRepository(db, client, fileUpl)
 	mRepo := newMessageRepository(db, client)
-	return newUsersRepo(db, client, fileUpl), pRepo, mRepo, newConnectionsRepository(pRepo, mRepo)
+	uRepo := newUsersRepo(db, client, fileUpl)
+	return uRepo, pRepo, mRepo, newConnectionsRepository(pRepo, mRepo, uRepo)
 }

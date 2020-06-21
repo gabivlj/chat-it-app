@@ -26,7 +26,7 @@ export default function Message({ message, currentUser }: Props) {
           style={{ wordWrap: 'break-word' }}
           className="font-semibold mt-3 mr-2 text-left max-w-lg"
         >
-          {message.text.repeat(100)}
+          {message.text}
         </span>
         <svg
           className="fill-current opacity-75 h-4 w-4"

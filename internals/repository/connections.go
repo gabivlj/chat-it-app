@@ -2,7 +2,7 @@ package repository
 
 import (
 	"context"
-	"fmt"
+	"errors"
 	"runtime/debug"
 	"sync"
 
@@ -14,15 +14,16 @@ import (
 type ConnectionsRepository struct {
 	connections map[string]PostConnections
 	messageRepo *MessageRepository
+	userRepo    *UserRepository
 	postRepo    *PostRepository
 	mu          *sync.Mutex
 }
 
 // newConnectionsRepository returns a new repository of connections
-func newConnectionsRepository(p *PostRepository, m *MessageRepository) *ConnectionsRepository {
+func newConnectionsRepository(p *PostRepository, m *MessageRepository, u *UserRepository) *ConnectionsRepository {
 	// 1024 * 1024 => single MB
 	debug.SetGCPercent(20)
-	return &ConnectionsRepository{connections: make(map[string]PostConnections, 1000), postRepo: p, mu: &sync.Mutex{}, messageRepo: m}
+	return &ConnectionsRepository{connections: make(map[string]PostConnections, 1000), postRepo: p, mu: &sync.Mutex{}, messageRepo: m, userRepo: u}
 }
 
 // PostConnections .
@@ -73,6 +74,7 @@ func (c *ConnectionsRepository) SendMessage(ctx context.Context, postID string, 
 	if !k {
 		post, err := c.postRepo.GetPost(ctx, postID)
 		if err != nil {
+			c.mu.Unlock()
 			return nil, err
 		}
 		c.connections[postID] = PostConnections{Post: post, Observers: map[string]Observer{userFrom: {User: &domain.User{ID: userFrom}, NewMessage: make(chan *domain.Message, 1)}}, mu: &sync.Mutex{}}
@@ -80,14 +82,19 @@ func (c *ConnectionsRepository) SendMessage(ctx context.Context, postID string, 
 	}
 	c.mu.Unlock()
 	postConn.mu.Lock()
+	defer postConn.mu.Unlock()
 	user, k := postConn.Observers[userFrom]
 	if !k {
-		return nil, fmt.Errorf("bad user ID")
+		userModel, err := c.userRepo.FindByID(ctx, userFrom)
+		if err != nil {
+			return nil, errors.New("Unexpected error")
+		}
+		msg.User = userModel
+	} else {
+		msg.User = user.User
 	}
-	msg.User = user.User
 	for _, observer := range postConn.Observers {
 		observer.NewMessage <- msg
 	}
-	postConn.mu.Unlock()
 	return msg, nil
 }
