@@ -15,6 +15,9 @@ const wsLink = new WebSocketLink({
     connectionParams: () => {
       const token = localStorage.getItem('token');
       return {
+        fetchOptions: {
+          mode: 'cors'
+        },
         headers: {
           Authorization: token
         }
@@ -25,13 +28,17 @@ const wsLink = new WebSocketLink({
 
 export const cache = new InMemoryCache();
 const httpLink = createUploadLink({
-  uri: 'http://localhost:8080/query'
+  uri: 'http://localhost:8080/query',
+  fetchOptions: {
+    mode: 'cors'
+  }
 });
 
 const linkUnifier = split(
   // split based on operation type
   ({ query }) => {
     const definition = getMainDefinition(query);
+    console.log(definition);
     return (
       definition.kind === 'OperationDefinition' &&
       definition.operation === 'subscription'
@@ -41,7 +48,7 @@ const linkUnifier = split(
   httpLink
 );
 
-const authLink = setContext((_, { headers }) => {
+const authLink = setContext((operation, { headers, credentials }) => {
   // get the authentication token from local storage if it exists
   const token = localStorage.getItem('token');
   // return the headers to the context so httpLink can read them
@@ -49,6 +56,9 @@ const authLink = setContext((_, { headers }) => {
     headers: {
       ...headers,
       authorization: token ? token : ''
+    },
+    fetchOptions: {
+      mode: 'cors'
     }
   };
 });

@@ -19,7 +19,8 @@ export default function Routes({ loading, loged }: Props) {
   });
   useEffect(() => {
     logUser();
-  }, [loading, loged, logUser]);
+    console.log('xddd');
+  }, [loading]);
   return (
     <Switch>
       {loading ? (

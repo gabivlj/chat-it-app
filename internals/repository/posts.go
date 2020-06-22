@@ -89,6 +89,7 @@ var empty = ""
 
 // GetPosts returns the posts of the frontpage
 func (p *PostRepository) GetPosts(ctx context.Context, pagination *model.Params) ([]*domain.Post, error) {
+	fmt.Println("sdffdsfdssfd")
 	options, query, err := parsePagination(pagination)
 	options.Sort = constants.SortDescendingCreatedAt
 	postsResult, err := p.postCollection.Find(ctx, query, options)

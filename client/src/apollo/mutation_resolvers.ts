@@ -9,7 +9,7 @@ export const mutationResolvers = {
   log: (
     _root: any,
     variables: { user: isLogged_loged_user | null },
-    { cache }: any
+    { client }: any
   ) => {
     const data: isLogged = {
       // We build the user object
@@ -18,7 +18,8 @@ export const mutationResolvers = {
         __typename: 'Loged'
       }
     };
-    cache.writeData({ data });
+    client.writeData({ data });
+
     return null;
   },
 
@@ -30,7 +31,7 @@ export const mutationResolvers = {
   logSession: (
     _root: any,
     variables: { user: logUser_logUser | null },
-    { cache }: any
+    { client }: any
   ) => {
     const data: isLogged = {
       // We build the user object
@@ -41,7 +42,8 @@ export const mutationResolvers = {
         __typename: 'Loged'
       }
     };
-    cache.writeData({ data });
+    console.log('ewee');
+    client.writeData({ data });
     if (variables.user) localStorage.setItem('token', variables.user.session);
     return null;
   }
