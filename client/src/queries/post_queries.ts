@@ -71,3 +71,22 @@ export const POST_FRONTPAGE = gql`
     }
   }
 `;
+
+export const CREATE_POST = gql`
+  mutation createPost($form: PostForm!) {
+    newPost(form: $form) {
+      text
+      title
+      id
+      image {
+        urlXL
+      }
+      user {
+        username
+        profileImage {
+          urlXL
+        }
+      }
+    }
+  }
+`;

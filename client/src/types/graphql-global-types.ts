@@ -18,6 +18,12 @@ export interface Params {
   limit: number;
 }
 
+export interface PostForm {
+  image?: any | null;
+  text: string;
+  title: string;
+}
+
 export interface UserQuery {
   username?: string | null;
   id?: string | null;

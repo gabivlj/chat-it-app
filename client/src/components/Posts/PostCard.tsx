@@ -53,7 +53,7 @@ export default function PostCard({ post }: Props) {
               </p>
             </Link>
             <div className="mt-12 h-64 overflow-y-auto">
-              <p className="text-md">{post.text}</p>
+              <p className="text-md break-words">{post.text}</p>
             </div>
 
             <div className="pt-12 pb-8"></div>
