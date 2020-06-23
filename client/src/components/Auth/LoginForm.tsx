@@ -48,13 +48,15 @@ export default function LoginForm() {
     logUserLocally();
   }, [result.loading, logUserLocally, result.data]);
   return (
-    <div className="container flex justify-center">
-      <h3 className="mt-64 text-3xl">
-        Log in in chat-it, the reddit inspired realtime post chat! (Long
-        advertisement)
-      </h3>
+    <div className="container lg:flex justify-center">
+      <div className="">
+        <h3 className="mt-64 text-3xl p-3">
+          Log in in chat-it, the reddit inspired realtime post chat! (Long
+          advertisement)
+        </h3>
+      </div>
       <div className="w-full max-w-xsm mt-32">
-        <form className="bg-white shadow-md rounded px-8 pt-6 pb-8 mb-4 ">
+        <form className="bg-white shadow-md rounded px-8 pt-6 pb-8 mb-4">
           <div className="mb-4">
             <Input
               label="Username"
