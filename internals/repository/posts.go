@@ -116,20 +116,23 @@ func (p *PostRepository) GetPostsFromUsers(ctx context.Context, userIDs []string
 		return nil, err
 	}
 	var postsMongo []postMongo = []postMongo{}
+	// Read all the posts and fill array
 	err = posts.All(ctx, &postsMongo)
 	if err != nil {
 		return nil, err
 	}
+	// Post hash by userIDs
 	postHash := map[string][]*domain.Post{}
 	for idx := range postsMongo {
 		post := postsMongo[idx]
-		_, ok := postHash[post.UserID]
-		if !ok {
+		_, found := postHash[post.UserID]
+		if !found {
 			postHash[post.UserID] = []*domain.Post{post.Domain()}
 			continue
 		}
 		postHash[post.UserID] = append(postHash[post.UserID], post.Domain())
 	}
+	// Create matrix of posts ordered by the ids they were passed
 	matrixOfPosts := make([][]*domain.Post, 0, len(userIDs))
 	for _, userID := range userIDs {
 		matrixOfPosts = append(matrixOfPosts, postHash[userID])

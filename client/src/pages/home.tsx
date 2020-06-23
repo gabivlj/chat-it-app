@@ -6,8 +6,16 @@ import { POST_FRONTPAGE } from '../queries/post_queries';
 import NotFound from '../components/Utils/NotFound';
 import PostsFrontPage from '../components/Posts/PostFrontpage/PostsFrontPage';
 import FormNewPost from '../components/Form/FormNewPost';
+import { isLogged } from '../queries/types/isLogged';
+import { CHECK_LOGED_LOCAL } from '../queries/user_queries';
+import Button from '../components/Inputs/Button';
+import Communication from '../components/Icons/Communication';
+import { withRouter, RouteComponentProps } from 'react-router';
+import PersonPlus from '../components/Icons/PersonPlus';
+import PersonKey from '../components/Icons/PersonKey';
 
-export default function Home() {
+function Home({ history }: RouteComponentProps) {
+  const logedData = useQuery<isLogged>(CHECK_LOGED_LOCAL);
   const [showingForm, setShow] = useState(false);
   const { data, loading, fetchMore, error } = useQuery<posts, postsVariables>(
     POST_FRONTPAGE,
@@ -53,22 +61,39 @@ export default function Home() {
   return (
     <>
       <div className="container mx-auto flex items-center flex-wrap pt-4 pb-12">
-        <button
-          className="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 px-4 rounded inline-flex items-center"
-          onClick={() => setShow(prev => !prev)}
-        >
-          <svg
-            className="fill-current w-4 h-4 mr-2"
-            xmlns="http://www.w3.org/2000/svg"
-            viewBox="0 0 20 20"
-          >
-            <path d="M12,8H4A2,2 0 0,0 2,10V14A2,2 0 0,0 4,16H5V20A1,1 0 0,0 6,21H8A1,1 0 0,0 9,20V16H12L17,20V4L12,8M21.5,12C21.5,13.71 20.54,15.26 19,16V8C20.53,8.75 21.5,10.3 21.5,12Z" />
-          </svg>
-          <span>Create a post</span>
-        </button>
+        {logedData.data && logedData.data.loged.user ? (
+          <Button
+            icon={<Communication />}
+            text="Create a post"
+            onClick={() => setShow(prev => !prev)}
+          />
+        ) : (
+          <>
+            <label className="block text-gray-700 text-sm font-bold mb-2 mr-2">
+              You are not loged, you cannot post! Consider the following:
+            </label>
+            <Button
+              icon={<PersonKey />}
+              text="Login"
+              onClick={() => history.push('/login')}
+            />
+            <div className="ml-2"></div>
+            <Button
+              icon={<PersonPlus />}
+              text="SignUp"
+              onClick={() => history.push('/login')}
+            />
+          </>
+        )}
       </div>
-      {showingForm && <FormNewPost />}
+      {showingForm && logedData.data && logedData.data.loged.user ? (
+        <FormNewPost />
+      ) : (
+        ''
+      )}
       <PostsFrontPage posts={data.posts} />
     </>
   );
 }
+
+export default withRouter(Home);

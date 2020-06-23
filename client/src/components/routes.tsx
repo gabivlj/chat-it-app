@@ -7,6 +7,7 @@ import { useMutation } from '@apollo/react-hooks';
 import { LOG_USER_LOCAL } from '../queries/user_queries';
 import Profile from '../pages/profile';
 import Post from '../pages/post';
+import Navbar from './navbar';
 
 type Props = {
   loged: isLogged | undefined;
@@ -19,20 +20,22 @@ export default function Routes({ loading, loged }: Props) {
   });
   useEffect(() => {
     logUser();
-    console.log('xddd');
   }, [loading]);
   return (
-    <Switch>
-      {loading ? (
-        <></>
-      ) : (
-        <>
-          <Route exact path="/post/:id" component={Post} />
-          <Route exact path="/user/:username" component={Profile} />
-          <Route exact path="/login" component={Login} />
-          <Route exact path="/" component={Home} />
-        </>
-      )}
-    </Switch>
+    <>
+      <Navbar />
+      <Switch>
+        {loading ? (
+          <></>
+        ) : (
+          <>
+            <Route exact path="/post/:id" component={Post} />
+            <Route exact path="/user/:username" component={Profile} />
+            <Route exact path="/login" component={Login} />
+            <Route exact path="/" component={Home} />
+          </>
+        )}
+      </Switch>
+    </>
   );
 }

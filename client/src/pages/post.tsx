@@ -149,7 +149,6 @@ export default function Post({
   if (!data) {
     return <></>;
   }
-
   return (
     <div>
       <div>
