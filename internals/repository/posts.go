@@ -89,7 +89,6 @@ var empty = ""
 
 // GetPosts returns the posts of the frontpage
 func (p *PostRepository) GetPosts(ctx context.Context, pagination *model.Params) ([]*domain.Post, error) {
-	fmt.Println("sdffdsfdssfd")
 	options, query, err := parsePagination(pagination)
 	options.Sort = constants.SortDescendingCreatedAt
 	postsResult, err := p.postCollection.Find(ctx, query, options)
@@ -138,4 +137,14 @@ func (p *PostRepository) GetPostsFromUsers(ctx context.Context, userIDs []string
 		matrixOfPosts = append(matrixOfPosts, postHash[userID])
 	}
 	return matrixOfPosts, nil
+}
+
+// CountPosts returns the number of posts from an user
+func (p *PostRepository) CountPosts(ctx context.Context, userID string) (int, error) {
+	query := bson.M{"userId": userID}
+	res, err := p.postCollection.CountDocuments(ctx, query)
+	if err != nil {
+		return 0, err
+	}
+	return int(res), nil
 }

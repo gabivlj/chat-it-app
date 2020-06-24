@@ -20,3 +20,11 @@ func (r *postResolver) Image(ctx context.Context, obj *domain.Post) (*domain.Ima
 func (r *postResolver) Chat(ctx context.Context, obj *domain.Post) ([]*domain.Message, error) {
 	return r.messageRepository.GetMessages(ctx, obj.ID, &model.Params{Limit: 10})
 }
+
+func (r *postResolver) NumberOfComments(ctx context.Context, obj *domain.Post) (int, error) {
+	postMessageCount, err := middleware.DataLoaderMessageCount(ctx).Load(obj.ID)
+	if err != nil {
+		return 0, err
+	}
+	return int(postMessageCount.Total), nil
+}

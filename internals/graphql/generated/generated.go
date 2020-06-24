@@ -81,13 +81,14 @@ type ComplexityRoot struct {
 	}
 
 	Post struct {
-		Chat      func(childComplexity int) int
-		CreatedAt func(childComplexity int) int
-		ID        func(childComplexity int) int
-		Image     func(childComplexity int) int
-		Text      func(childComplexity int) int
-		Title     func(childComplexity int) int
-		User      func(childComplexity int) int
+		Chat             func(childComplexity int) int
+		CreatedAt        func(childComplexity int) int
+		ID               func(childComplexity int) int
+		Image            func(childComplexity int) int
+		NumberOfComments func(childComplexity int) int
+		Text             func(childComplexity int) int
+		Title            func(childComplexity int) int
+		User             func(childComplexity int) int
 	}
 
 	Query struct {
@@ -107,10 +108,12 @@ type ComplexityRoot struct {
 	}
 
 	User struct {
-		ID           func(childComplexity int) int
-		Posts        func(childComplexity int) int
-		ProfileImage func(childComplexity int) int
-		Username     func(childComplexity int) int
+		ID               func(childComplexity int) int
+		NumberOfComments func(childComplexity int) int
+		NumberOfPosts    func(childComplexity int) int
+		Posts            func(childComplexity int) int
+		ProfileImage     func(childComplexity int) int
+		Username         func(childComplexity int) int
 	}
 
 	UserSession struct {
@@ -139,6 +142,8 @@ type PostResolver interface {
 
 	Image(ctx context.Context, obj *domain.Post) (*domain.Image, error)
 	Chat(ctx context.Context, obj *domain.Post) ([]*domain.Message, error)
+
+	NumberOfComments(ctx context.Context, obj *domain.Post) (int, error)
 }
 type QueryResolver interface {
 	Image(ctx context.Context, id string) (*domain.Image, error)
@@ -157,6 +162,8 @@ type SubscriptionResolver interface {
 type UserResolver interface {
 	Posts(ctx context.Context, obj *domain.User) ([]*domain.Post, error)
 	ProfileImage(ctx context.Context, obj *domain.User) (*domain.Image, error)
+	NumberOfPosts(ctx context.Context, obj *domain.User) (int, error)
+	NumberOfComments(ctx context.Context, obj *domain.User) (int, error)
 }
 
 type executableSchema struct {
@@ -346,6 +353,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Post.Image(childComplexity), true
 
+	case "Post.numberOfComments":
+		if e.complexity.Post.NumberOfComments == nil {
+			break
+		}
+
+		return e.complexity.Post.NumberOfComments(childComplexity), true
+
 	case "Post.text":
 		if e.complexity.Post.Text == nil {
 			break
@@ -484,6 +498,20 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.User.ID(childComplexity), true
 
+	case "User.numberOfComments":
+		if e.complexity.User.NumberOfComments == nil {
+			break
+		}
+
+		return e.complexity.User.NumberOfComments(childComplexity), true
+
+	case "User.numberOfPosts":
+		if e.complexity.User.NumberOfPosts == nil {
+			break
+		}
+
+		return e.complexity.User.NumberOfPosts(childComplexity), true
+
 	case "User.posts":
 		if e.complexity.User.Posts == nil {
 			break
@@ -607,6 +635,8 @@ var sources = []*ast.Source{
   username: String!
   posts: [Post!]!
   profileImage: Image
+  numberOfPosts: Int!
+  numberOfComments: Int!
 }
 
 type Post {
@@ -617,6 +647,7 @@ type Post {
   title: String!
   text: String!
   createdAt: Int!
+  numberOfComments: Int!
 }
 
 type Message {
@@ -1862,6 +1893,40 @@ func (ec *executionContext) _Post_createdAt(ctx context.Context, field graphql.C
 	return ec.marshalNInt2int64(ctx, field.Selections, res)
 }
 
+func (ec *executionContext) _Post_numberOfComments(ctx context.Context, field graphql.CollectedField, obj *domain.Post) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Post",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Post().NumberOfComments(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int)
+	fc.Result = res
+	return ec.marshalNInt2int(ctx, field.Selections, res)
+}
+
 func (ec *executionContext) _Query_image(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -2468,6 +2533,74 @@ func (ec *executionContext) _User_profileImage(ctx context.Context, field graphq
 	res := resTmp.(*domain.Image)
 	fc.Result = res
 	return ec.marshalOImage2ᚖgithubᚗcomᚋgabivljᚋchatᚑitᚋinternalsᚋdomainᚐImage(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _User_numberOfPosts(ctx context.Context, field graphql.CollectedField, obj *domain.User) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "User",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.User().NumberOfPosts(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int)
+	fc.Result = res
+	return ec.marshalNInt2int(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _User_numberOfComments(ctx context.Context, field graphql.CollectedField, obj *domain.User) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "User",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.User().NumberOfComments(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int)
+	fc.Result = res
+	return ec.marshalNInt2int(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _UserSession_user(ctx context.Context, field graphql.CollectedField, obj *model.UserSession) (ret graphql.Marshaler) {
@@ -3983,6 +4116,20 @@ func (ec *executionContext) _Post(ctx context.Context, sel ast.SelectionSet, obj
 			if out.Values[i] == graphql.Null {
 				atomic.AddUint32(&invalids, 1)
 			}
+		case "numberOfComments":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Post_numberOfComments(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			})
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -4214,6 +4361,34 @@ func (ec *executionContext) _User(ctx context.Context, sel ast.SelectionSet, obj
 					}
 				}()
 				res = ec._User_profileImage(ctx, field, obj)
+				return res
+			})
+		case "numberOfPosts":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._User_numberOfPosts(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			})
+		case "numberOfComments":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._User_numberOfComments(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
 				return res
 			})
 		default:

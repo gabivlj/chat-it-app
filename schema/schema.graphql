@@ -3,6 +3,8 @@ type User {
   username: String!
   posts: [Post!]!
   profileImage: Image
+  numberOfPosts: Int!
+  numberOfComments: Int!
 }
 
 type Post {
@@ -13,6 +15,7 @@ type Post {
   title: String!
   text: String!
   createdAt: Int!
+  numberOfComments: Int!
 }
 
 type Message {

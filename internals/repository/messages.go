@@ -2,6 +2,7 @@ package repository
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"time"
 
@@ -75,4 +76,51 @@ func (m *MessageRepository) SaveMessage(ctx context.Context, postID, userID, tex
 	}
 	msg.ID = res.InsertedID.(primitive.ObjectID)
 	return msg.Domain(), nil
+}
+
+// CountMessagesPost TODO Dataloaden pls
+func (m *MessageRepository) CountMessagesPost(ctx context.Context, postID string) (int, error) {
+	return 0, nil
+}
+
+type countMessagesPost struct {
+	Total uint64 `bson:"total"`
+	ID    string `bson:"_id"`
+}
+
+type arrayCounts []countMessagesPost
+
+func (a arrayCounts) reorder(ids []string) ([]*domain.MessageCount, error) {
+	zip := map[string]uint64{}
+	for idx := range a {
+		element := a[idx]
+		zip[element.ID] = element.Total
+	}
+	elements := make([]*domain.MessageCount, 0, len(ids))
+	for _, id := range ids {
+		elements = append(elements, &domain.MessageCount{Total: zip[id], PostID: id})
+	}
+	return elements, nil
+}
+
+// CountMessagesPosts !! CONTEXT: Im currently doing the dataloaden for counting messages of posts.
+func (m *MessageRepository) CountMessagesPosts(ctx context.Context, postIDs []string) ([]*domain.MessageCount, error) {
+	firstQuery := bson.M{"$match": bson.M{"postId": bson.M{"$in": postIDs}}}
+	secondQuery := bson.M{"$group": bson.M{"_id": "$postId", "total": bson.M{"$sum": 1}}}
+	res, err := m.messagesCollection.Aggregate(ctx, bson.A{firstQuery, secondQuery})
+	if err != nil {
+		return nil, err
+	}
+	messagesPost := []countMessagesPost{}
+	err = res.All(ctx, &messagesPost)
+	if err != nil {
+		fmt.Println(err)
+		return nil, err
+	}
+	return arrayCounts(messagesPost).reorder(postIDs)
+}
+
+// CountMessagesUser returns the number of messages sent by an user
+func (m *MessageRepository) CountMessagesUser(ctx context.Context, userID string) (int, error) {
+	return 0, nil
 }

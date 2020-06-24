@@ -13,4 +13,5 @@ type PostService interface {
 	GetPost(ctx context.Context, id string) (*domain.Post, error)
 	GetPosts(ctx context.Context, pagination *model.Params) ([]*domain.Post, error)
 	GetPostsFromUsers(ctx context.Context, userIDs []string) ([][]*domain.Post, error)
+	CountPosts(ctx context.Context, userID string) (int, error)
 }

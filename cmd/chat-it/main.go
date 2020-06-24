@@ -38,7 +38,7 @@ func main() {
 	srv := handler.New(graphqlHandler)
 
 	// Middleware and transports
-	middlewareDataloadenHTTP, middlewareDataloadenWebSockets := middleware.DataloaderMiddleware(srv, userRepo, postRepo)
+	middlewareDataloadenHTTP, middlewareDataloadenWebSockets := middleware.DataloaderMiddleware(srv, userRepo, postRepo, msgRepo)
 	middlewareHTTP, middlewareSessionsWebsockets := middleware.SessionMiddleware(userRepo.Sessions, middlewareDataloadenHTTP.ServeHTTP)
 	addTransports(srv, middlewareSessionsWebsockets, middlewareDataloadenWebSockets)
 
@@ -46,9 +46,6 @@ func main() {
 	http.Handle("/", middleware.Cors(playground.Handler("GraphQL playground", "/query")))
 	http.Handle("/query", middleware.Cors(middlewareHTTP))
 	log.Printf("connect to http://localhost:%s/ for GraphQL playground", port)
-
-	// !! Test websockets
-	// testWs(srv)
 
 	log.Fatal(http.ListenAndServe(":"+port, nil))
 }

@@ -11,3 +11,9 @@ type Message struct {
 	Post *Post `json:"post"`
 	User *User `json:"user"`
 }
+
+// MessageCount .
+type MessageCount struct {
+	Total  uint64 `json:"total"`
+	PostID string `json:"postId"`
+}
