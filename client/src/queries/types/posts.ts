@@ -27,6 +27,7 @@ export interface posts_posts_user {
 
 export interface posts_posts {
   __typename: "Post";
+  numberOfComments: number;
   text: string;
   id: string;
   title: string;

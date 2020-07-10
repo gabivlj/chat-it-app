@@ -36,6 +36,10 @@ export const LOG_USER_MUTATION = gql`
   }
 `;
 
+/**
+ * COMMENT ON UPDATE OF SCHEMA OR ERROR.
+ *
+ */
 export const LOG_USER_LOCAL = gql`
   mutation LogUserLocal($user: Loged) {
     log(user: $user) @client
@@ -47,6 +51,8 @@ export const LOG_USER_LOCAL_SESSION = gql`
     logSession(user: $user) @client
   }
 `;
+
+/******** */
 
 export const REGISTER_USER_MUTATION = gql`
   mutation registerUser($username: String, $password: String) {
@@ -65,6 +71,8 @@ export const GET_USER = gql`
     user(id: $query) {
       username
       id
+      numberOfComments
+      numberOfPosts
       profileImage {
         urlXL
       }

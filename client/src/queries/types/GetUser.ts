@@ -31,6 +31,8 @@ export interface GetUser_user {
   __typename: "User";
   username: string;
   id: string;
+  numberOfComments: number;
+  numberOfPosts: number;
   profileImage: GetUser_user_profileImage | null;
   posts: GetUser_user_posts[];
 }

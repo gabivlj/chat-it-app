@@ -56,6 +56,7 @@ export const SEND_MESSAGE = gql`
 export const POST_FRONTPAGE = gql`
   query posts($params: Params) {
     posts(params: $params) {
+      numberOfComments
       text
       id
       title
@@ -87,6 +88,7 @@ export const CREATE_POST = gql`
           urlXL
         }
       }
+      numberOfComments
     }
   }
 `;

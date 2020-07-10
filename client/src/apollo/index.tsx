@@ -8,8 +8,9 @@ import { setContext } from 'apollo-link-context';
 import { createUploadLink } from 'apollo-upload-client';
 import { mutationResolvers } from './mutation_resolvers';
 
-const uri = `localhost`;
-const uriBuild = process.env.REACT_APP_URI_API;
+const uri = `localhost:8070`;
+const uriBuild =
+  process.env.NODE_ENV === 'development' ? uri : process.env.REACT_APP_URI_API;
 const wsLink = new WebSocketLink({
   uri: `ws://${uriBuild || uri}/query`,
   options: {

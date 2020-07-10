@@ -41,7 +41,7 @@ export default function PostFrontPage({ post }: Props) {
           </span>
         </Link>
         <span className="inline-block bg-gray-200 rounded-full px-3 py-1 text-sm font-semibold text-gray-700 mr-2 float-left">
-          Comments: 1221
+          Comments: {post.numberOfComments || 0}
         </span>
       </div>
     </div>

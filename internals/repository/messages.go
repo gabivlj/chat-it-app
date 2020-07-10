@@ -78,8 +78,9 @@ func (m *MessageRepository) SaveMessage(ctx context.Context, postID, userID, tex
 	return msg.Domain(), nil
 }
 
-// CountMessagesPost TODO Dataloaden pls
+// CountMessagesPost count messages
 func (m *MessageRepository) CountMessagesPost(ctx context.Context, postID string) (int, error) {
+
 	return 0, nil
 }
 
@@ -103,7 +104,7 @@ func (a arrayCounts) reorder(ids []string) ([]*domain.MessageCount, error) {
 	return elements, nil
 }
 
-// CountMessagesPosts !! CONTEXT: Im currently doing the dataloaden for counting messages of posts.
+// CountMessagesPosts with dataloaden
 func (m *MessageRepository) CountMessagesPosts(ctx context.Context, postIDs []string) ([]*domain.MessageCount, error) {
 	firstQuery := bson.M{"$match": bson.M{"postId": bson.M{"$in": postIDs}}}
 	secondQuery := bson.M{"$group": bson.M{"_id": "$postId", "total": bson.M{"$sum": 1}}}
@@ -120,7 +121,13 @@ func (m *MessageRepository) CountMessagesPosts(ctx context.Context, postIDs []st
 	return arrayCounts(messagesPost).reorder(postIDs)
 }
 
-// CountMessagesUser returns the number of messages sent by an user
+// CountMessagesUser returns the number of messages sent by an user (No dataloaden)
 func (m *MessageRepository) CountMessagesUser(ctx context.Context, userID string) (int, error) {
-	return 0, nil
+	// firstQuery := bson.M{"$match": bson.M{"userId": bson.M{"$in": []string{userID}}}}
+	// secondQuery := bson.M{"$group": bson.M{"_id": "$postId", "total": bson.M{"$sum": 1}}}
+	// secondQuery := bson.M{"$group": bson.M{"_id": "$postId", "total": bson.M{"$sum": 1}}}
+	query := bson.M{"userId": userID}
+	nOfMsgs, _ := m.messagesCollection.CountDocuments(ctx, query)
+	// todo : check integer overflow
+	return int(nOfMsgs), nil
 }

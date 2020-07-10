@@ -1,5 +1,5 @@
 import React from 'react';
-import Icon from '../Utils/Line';
+import IconPosts from '../Utils/Line';
 import { getPostAndMessages_post } from '../../queries/types/getPostAndMessages';
 import { Link } from 'react-router-dom';
 
@@ -34,7 +34,7 @@ export default function PostCard({ post }: Props) {
               <div
                 className="block lg:hidden shadow-xl mx-auto -mt-16 h-48 w-48 bg-cover bg-center"
                 style={{
-                  backgroundImage: `url('${post.image.urlXL}')`
+                  backgroundImage: `url('${post.image.urlXL}')`,
                 }}
               ></div>
             )}

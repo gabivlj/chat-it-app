@@ -32,6 +32,7 @@ export interface createPost_newPost {
   id: string;
   image: createPost_newPost_image | null;
   user: createPost_newPost_user;
+  numberOfComments: number;
 }
 
 export interface createPost {

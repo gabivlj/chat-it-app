@@ -1,10 +1,10 @@
 import React from 'react';
 import { GetUser_user } from '../../queries/types/GetUser';
-import Icon from '../Utils/Line';
+import IconPosts from '../Utils/Line';
 import IconPlace from '../Utils/IconPlace';
 import {
   CHECK_LOGED_LOCAL,
-  UPLOAD_PROFILE_IMAGE
+  UPLOAD_PROFILE_IMAGE,
 } from '../../queries/user_queries';
 import { isLogged } from '../../queries/types/isLogged';
 import { useQuery, useMutation } from '@apollo/react-hooks';
@@ -13,6 +13,7 @@ import { TODO } from '../../utils/todo';
 import PostsProfile from '../Posts/PostsProfile';
 import { smoothScroll } from '../../utils/smoothScroll';
 import UploadFile from '../Inputs/UploadFile';
+import Tabs from '../Utils/Tabs';
 
 type Props = {
   user: GetUser_user;
@@ -23,9 +24,9 @@ export default function ProfileCard({ user }: Props) {
   const [mutate, { error, loading }] = useMutation<newImage, newImageVariables>(
     UPLOAD_PROFILE_IMAGE,
     {
-      onError: err => {
+      onError: (err) => {
         TODO(`Handle err ${err}`);
-      }
+      },
     }
   );
 
@@ -38,8 +39,8 @@ export default function ProfileCard({ user }: Props) {
   function onChangeFile({
     target: {
       validity,
-      files: [file]
-    }
+      files: [file],
+    },
   }: any) {
     if (validity.valid) mutate({ variables: { image: file } });
   }
@@ -60,17 +61,27 @@ export default function ProfileCard({ user }: Props) {
                   user.profileImage && user.profileImage.urlXL.trim() !== ''
                     ? user.profileImage.urlXL
                     : 'https://www.netclipart.com/pp/m/232-2329525_person-svg-shadow-default-profile-picture-png.png'
-                }')`
+                }')`,
               }}
             ></div>
 
             <h1 className="text-3xl font-bold pt-8 lg:pt-0">{user.username}</h1>
             <div className="mx-auto lg:mx-0 w-4/5 pt-3 border-b-2 border-teal-500 opacity-25"></div>
-            <p className="pt-4 text-base font-bold flex items-center justify-center lg:justify-start">
-              <Icon /> todo: Put how many posts
+            <p className="pt-2 text-gray-600 text-xs lg:text-sm flex items-center justify-center lg:justify-start">
+              <IconPosts /> Has posted{' '}
+              <span className="font-bold ml-1 mr-1">
+                {' '}
+                {user.numberOfPosts}{' '}
+              </span>{' '}
+              times!
             </p>
             <p className="pt-2 text-gray-600 text-xs lg:text-sm flex items-center justify-center lg:justify-start">
-              <IconPlace /> Todo: Put how many comments
+              <IconPlace /> Has commented{' '}
+              <span className="font-bold ml-1 mr-1">
+                {' '}
+                {user.numberOfComments}{' '}
+              </span>{' '}
+              times!
             </p>
             <p className="pt-8 text-sm">
               Totally optional short description about yourself, what you do and
@@ -117,10 +128,30 @@ export default function ProfileCard({ user }: Props) {
         </div>
       </div>
       <div id="posts">
-        <h1 className="text-3xl font-bold pt-8 lg:pt-0">
+        <Tabs
+          components={[
+            [
+              'Posts',
+              () => (
+                <>
+                  <PostsProfile posts={user.posts} />
+                </>
+              ),
+            ],
+            [
+              'Comments',
+              () => (
+                <>
+                  <h1 className="text-3xl font-bold pt-8 lg:pt-0 py-64"></h1>
+                </>
+              ),
+            ],
+          ]}
+        />
+        {/* <h1 className="text-3xl font-bold pt-8 lg:pt-0">
           Posts from {user.username}
         </h1>
-        <PostsProfile posts={user.posts} />
+        <PostsProfile posts={user.posts} /> */}
       </div>
     </>
   );
