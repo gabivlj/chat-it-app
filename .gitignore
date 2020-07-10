@@ -3,3 +3,9 @@
 /.env
 */A_GOOGLE_CREDENTIALS.json
 A_GOOGLE_CREDENTIALS.json
+mongo-volume
+internal
+init-mongo.js
+/server/node_modules
+server/node_modules
+./server/node_modules

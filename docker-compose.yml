@@ -1,0 +1,70 @@
+version: '3'
+
+# Networks to be created to facilitate communication between containers
+networks:
+  chat-it-network:
+    driver: bridge
+
+services:
+  database:
+    image: 'mongo'
+    container_name: 'mongo-container'
+    environment:
+      - MONGO_INITDB_DATABASE=chat-it
+      ## todo change
+      - MONGO_INITDB_ROOT_USERNAME=gabivlj
+      - MONGO_INITDB_ROOT_PASSWORD=gabivlj
+    volumes:
+      - ./init-mongo.js:/docker-entrypoint-initdb.d/init-mongo-js:ro
+      - ./mongo-volume:/data/db
+    ports:
+      - '27017-27019:27017-27019'
+    networks:
+      - chat-it-network
+  reverse-proxy:
+    networks:
+      - chat-it-network
+    # The official v2 Traefik docker image
+    image: traefik:v2.2
+    # Enables the web UI and tells Traefik to listen to docker
+    command: --api.insecure=true --providers.docker
+    ports:
+      # The HTTP port
+      - '80:80'
+      # The Web UI (enabled by --api.insecure=true)
+      - '8080:8080'
+    volumes:
+      # So that Traefik can listen to the Docker events
+      - /var/run/docker.sock:/var/run/docker.sock
+  client:
+    container_name: webapp
+    build:
+      context: ./client
+      args:
+        - REACT_APP_URI_API=chat-it.api.localhost
+
+    networks:
+      - chat-it-network
+    ports:
+      - '3000:3000'
+    labels:
+      - 'traefik.http.routers.frontend.rule=Host(`chat-it.localhost`)'
+  server:
+    container_name: chat-it-api
+    ## TODO pass ENV from .env to this, then pass arguments to DOCKERFILE and DOCKERFILE sets envs for microservice
+    depends_on:
+      - database
+    build: .
+    restart: on-failure
+    volumes:
+      - ./internal/:/app/internal
+    networks:
+      - chat-it-network
+    labels:
+      - 'traefik.http.routers.whoami.rule=Host(`chat-it.api.localhost`)'
+      - 'traefik.http.middlewares.testheader.headers.accesscontrolallowheaders=*'
+      - 'traefik.http.middlewares.testheader.headers.accesscontrolallowmethods=GET,OPTIONS,PUT,POST'
+      - 'traefik.http.middlewares.testheader.headers.accesscontrolalloworiginlist=http://localhost:8080'
+
+volumes:
+  api:

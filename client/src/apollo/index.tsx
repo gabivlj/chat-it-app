@@ -8,30 +8,32 @@ import { setContext } from 'apollo-link-context';
 import { createUploadLink } from 'apollo-upload-client';
 import { mutationResolvers } from './mutation_resolvers';
 
+const uri = `localhost`;
+const uriBuild = process.env.REACT_APP_URI_API;
 const wsLink = new WebSocketLink({
-  uri: `ws://localhost:8080/query`,
+  uri: `ws://${uriBuild || uri}/query`,
   options: {
     reconnect: true,
     connectionParams: () => {
       const token = localStorage.getItem('token');
       return {
         fetchOptions: {
-          mode: 'cors'
+          mode: 'cors',
         },
         headers: {
-          Authorization: token
-        }
+          Authorization: token,
+        },
       };
-    }
-  }
+    },
+  },
 });
 
 export const cache = new InMemoryCache();
 const httpLink = createUploadLink({
-  uri: 'http://localhost:8080/query',
+  uri: `http://${uriBuild || uri}/query`,
   fetchOptions: {
-    mode: 'cors'
-  }
+    mode: 'cors',
+  },
 });
 
 const linkUnifier = split(
@@ -55,11 +57,11 @@ const authLink = setContext((operation, { headers, credentials }) => {
   return {
     headers: {
       ...headers,
-      authorization: token ? token : ''
+      authorization: token ? token : '',
     },
     fetchOptions: {
-      mode: 'cors'
-    }
+      mode: 'cors',
+    },
   };
 });
 
@@ -68,7 +70,7 @@ export const client: ApolloClient<NormalizedCacheObject> = new ApolloClient({
   link: authLink.concat(linkUnifier),
   resolvers: {
     Mutation: {
-      ...mutationResolvers
-    }
-  }
+      ...mutationResolvers,
+    },
+  },
 });

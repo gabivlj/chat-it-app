@@ -44,7 +44,10 @@ func main() {
 
 	// Handle everything
 	http.Handle("/", middleware.Cors(playground.Handler("GraphQL playground", "/query")))
+	// http.Serve("/*filepath", http.Dir("/"))
+	// handler := http.FileServer(http.Dir("/"))
 	http.Handle("/query", middleware.Cors(middlewareHTTP))
+	// http.Handle("/", middleware.Cors(handler.ServeHTTP))
 	log.Printf("connect to http://localhost:%s/ for GraphQL playground", port)
 
 	log.Fatal(http.ListenAndServe(":"+port, nil))

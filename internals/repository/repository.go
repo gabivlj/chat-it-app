@@ -36,6 +36,6 @@ func NewRepository() (*UserRepository, *PostRepository, *MessageRepository, *Con
 	pRepo := newPostRepository(db, client, fileUpl)
 	mRepo := newMessageRepository(db, client)
 	uRepo := newUsersRepo(db, client, fileUpl)
-	mRepo.CountMessagesPosts(context.TODO(), []string{"5ef0166f1173b7f88b007a96", "5ed1b3ab0f94ac59a503574a"})
+	// mRepo.CountMessagesPosts(context.TODO(), []string{"5ef0166f1173b7f88b007a96", "5ed1b3ab0f94ac59a503574a"})
 	return uRepo, pRepo, mRepo, newConnectionsRepository(pRepo, mRepo, uRepo)
 }

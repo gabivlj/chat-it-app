@@ -18,10 +18,6 @@ type CloudStorageImages struct {
 
 // NewCloudStorage .
 func NewCloudStorage() *CloudStorageImages {
-	// bucketURI, ok := os.LookupEnv("BUCKET")
-	// if !ok {
-	// 	panic("no bucket URI")
-	// }
 	ctx := context.Background()
 	storageClient, err := storage.NewClient(ctx)
 	if err != nil {
