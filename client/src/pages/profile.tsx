@@ -28,7 +28,10 @@ export default function Profile({ match }: Props) {
         username: match.params.username,
         id: null,
       },
-      params: {
+      paramsPost: {
+        limit: 5,
+      },
+      paramsComments: {
         limit: 5,
       },
     },
@@ -41,12 +44,16 @@ export default function Profile({ match }: Props) {
     if (!data) return;
     const fetchMoreOnScroll = () => {
       if (!canFetchMore({ data, loading })) return;
-      const { postsUser } = data.user;
+      const { postsUser, commentsUser } = data.user;
       fetchMore({
         variables: {
-          params: {
+          paramsPost: {
             limit: 5,
             before: postsUser[postsUser.length - 1].id,
+          },
+          paramsComments: {
+            limit: 5,
+            before: commentsUser[commentsUser.length - 1].id,
           },
         },
         updateQuery: (prev: any, { fetchMoreResult }) => {
@@ -57,6 +64,10 @@ export default function Profile({ match }: Props) {
               postsUser: [
                 ...prev.user.postsUser,
                 ...fetchMoreResult.user.postsUser,
+              ],
+              commentsUser: [
+                ...prev.user.commentsUser,
+                ...fetchMoreResult.user.commentsUser,
               ],
             },
           });

@@ -10,10 +10,11 @@ import { isLogged } from '../../queries/types/isLogged';
 import { useQuery, useMutation } from '@apollo/react-hooks';
 import { newImage, newImageVariables } from '../../queries/types/newImage';
 import { TODO } from '../../utils/todo';
-import PostsProfile from '../Posts/PostsProfile';
+import PostsProfile from './PostsProfile';
 import { smoothScroll } from '../../utils/smoothScroll';
 import UploadFile from '../Inputs/UploadFile';
 import Tabs from '../Utils/Tabs';
+import CommentsPost from './CommentsPost';
 
 type Props = {
   user: GetUser_user;
@@ -142,7 +143,8 @@ export default function ProfileCard({ user }: Props) {
               'Comments',
               () => (
                 <>
-                  <h1 className="text-3xl font-bold pt-8 lg:pt-0 py-64"></h1>
+                  <div className="mt-3"></div>
+                  <CommentsPost user={user} comments={user.commentsUser} />
                 </>
               ),
             ],

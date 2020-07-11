@@ -3,22 +3,18 @@ import { isLogged_loged_user, isLogged } from '../queries/types/isLogged';
 import { Link } from 'react-router-dom';
 import { CHECK_LOGED_LOCAL, LOG_USER_LOCAL } from '../queries/user_queries';
 import { useQuery, useMutation } from '@apollo/react-hooks';
+import { useMediaQuery, MediaQueries } from '../utils/useMediaQuery';
 
 export default function Navbar() {
   const [logUser] = useMutation(LOG_USER_LOCAL, {
-    variables: { user: null }
+    variables: { user: null },
   });
   const { data } = useQuery<isLogged>(CHECK_LOGED_LOCAL);
   const [showing, setShowed] = useState(false);
+  const isLarge = useMediaQuery(MediaQueries.Medium);
   useEffect(() => {
-    if (document.body.clientWidth >= 1000) {
-      setShowed(true);
-    }
-    let interval = setInterval(() => {
-      if (document.body.clientWidth >= 1000 && !showing) setShowed(true);
-    }, 500);
-    return () => clearInterval(interval);
-  }, []);
+    setShowed(isLarge);
+  }, [isLarge]);
 
   return (
     <div>
@@ -35,7 +31,7 @@ export default function Navbar() {
         <div className="block lg:hidden">
           <button
             className="flex items-center px-3 py-2 border rounded text-teal-200 border-teal-400 hover:text-white hover:border-white"
-            onClick={() => setShowed(prev => !prev)}
+            onClick={() => setShowed((prev) => !prev)}
           >
             <svg
               className="fill-current h-3 w-3"

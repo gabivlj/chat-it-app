@@ -1,5 +1,5 @@
 import React from 'react';
-import Post from './Post';
+import Post from '../Posts/Post';
 import { GetUser_user_posts } from '../../queries/types/GetUser';
 
 type Props = {

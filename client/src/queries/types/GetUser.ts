@@ -40,6 +40,26 @@ export interface GetUser_user_postsUser {
   image: GetUser_user_postsUser_image | null;
 }
 
+export interface GetUser_user_commentsUser_post_image {
+  __typename: "Image";
+  urlXL: string;
+}
+
+export interface GetUser_user_commentsUser_post {
+  __typename: "Post";
+  text: string;
+  id: string;
+  title: string;
+  image: GetUser_user_commentsUser_post_image | null;
+}
+
+export interface GetUser_user_commentsUser {
+  __typename: "Message";
+  id: string;
+  text: string;
+  post: GetUser_user_commentsUser_post;
+}
+
 export interface GetUser_user {
   __typename: "User";
   username: string;
@@ -49,6 +69,7 @@ export interface GetUser_user {
   profileImage: GetUser_user_profileImage | null;
   posts: GetUser_user_posts[];
   postsUser: GetUser_user_postsUser[];
+  commentsUser: GetUser_user_commentsUser[];
 }
 
 export interface GetUser {
@@ -57,5 +78,6 @@ export interface GetUser {
 
 export interface GetUserVariables {
   query: UserQuery;
-  params?: Params | null;
+  paramsPost?: Params | null;
+  paramsComments?: Params | null;
 }

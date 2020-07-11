@@ -67,7 +67,11 @@ export const REGISTER_USER_MUTATION = gql`
 `;
 
 export const GET_USER = gql`
-  query GetUser($query: UserQuery!, $params: Params) {
+  query GetUser(
+    $query: UserQuery!
+    $paramsPost: Params
+    $paramsComments: Params
+  ) {
     user(id: $query) {
       username
       id
@@ -76,20 +80,24 @@ export const GET_USER = gql`
       profileImage {
         urlXL
       }
-      posts {
+      postsUser(params: $paramsPost) {
         text
+        id
+        title
         image {
           urlXL
         }
-        title
-        id
       }
-      postsUser(params: $params) {
-        text
+      commentsUser(params: $paramsComments) {
         id
-        title
-        image {
-          urlXL
+        text
+        post {
+          text
+          id
+          title
+          image {
+            urlXL
+          }
         }
       }
     }
