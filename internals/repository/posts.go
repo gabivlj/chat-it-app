@@ -31,6 +31,22 @@ type postMongo struct {
 	URLImage  string             `bson:"urlImg,omitempty"`
 }
 
+func reorderByIDsAndDomain(posts []postMongo, ids []string) ([]*domain.Post, error) {
+	if len(posts) != len(ids) {
+		return nil, fmt.Errorf("error finding posts, probably bad ids were provided to the query")
+	}
+	dict := make(map[string]*domain.Post, len(posts))
+	for idx := range posts {
+		p := posts[idx].Domain()
+		dict[p.ID] = p
+	}
+	arr := make([]*domain.Post, len(posts))
+	for idx, id := range ids {
+		arr[idx] = dict[id]
+	}
+	return arr, nil
+}
+
 func (p *postMongo) Domain() *domain.Post {
 	return &domain.Post{Text: p.Text, UserID: p.UserID, CreatedAt: p.CreatedAt, Title: p.Title, ID: p.ID.Hex(), URLImage: p.URLImage}
 }
@@ -88,8 +104,11 @@ func (p *PostRepository) GetPost(ctx context.Context, id string) (*domain.Post, 
 var empty = ""
 
 // GetPosts returns the posts of the frontpage
-func (p *PostRepository) GetPosts(ctx context.Context, pagination *model.Params) ([]*domain.Post, error) {
+func (p *PostRepository) GetPosts(ctx context.Context, pagination *model.Params, users ...string) ([]*domain.Post, error) {
 	options, query, err := parsePagination(pagination)
+	if len(users) > 0 {
+		query["userId"] = bson.M{"$in": users}
+	}
 	options.Sort = constants.SortDescendingCreatedAt
 	postsResult, err := p.postCollection.Find(ctx, query, options)
 	if err != nil {
@@ -147,4 +166,19 @@ func (p *PostRepository) CountPosts(ctx context.Context, userID string) (int, er
 		return 0, err
 	}
 	return int(res), nil
+}
+
+// GetPostsByIDs returns the posts specified in the ids
+func (p *PostRepository) GetPostsByIDs(ctx context.Context, ids ...string) ([]*domain.Post, error) {
+	query := bson.M{"_id": bson.M{"$in": getObjectIDs(ids)}}
+	res, err := p.postCollection.Find(ctx, query)
+	if err != nil {
+		return nil, err
+	}
+	mongoPosts := []postMongo{}
+	err = res.All(ctx, &mongoPosts)
+	if err != nil {
+		return nil, err
+	}
+	return reorderByIDsAndDomain(mongoPosts, ids)
 }

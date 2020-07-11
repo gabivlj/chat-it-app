@@ -7,7 +7,7 @@ type Props = {
 };
 
 const classActive = `bg-white inline-block border-l border-t border-r rounded-t py-2 px-4 text-blue-700 font-semibold outline-none`;
-const classInactive = `bg-white inline-block py-2 px-4 text-blue-500 hover:text-blue-800 font-semibold outline-none`;
+const classInactive = `bg-white inline-block py-2 px-4 text-blue-500 hover:text-blue-800 font-semibold outline-none cursor-pointer`;
 
 export default function Tabs({
   components,

@@ -5,7 +5,8 @@ type User {
   profileImage: Image
   numberOfPosts: Int!
   numberOfComments: Int!
-  postsUser(id: ID!, params: Params): [Post!]!
+  postsUser(params: Params): [Post!]!
+  commentsUser(params: Params): [Message!]!
 }
 
 type Post {

@@ -3,7 +3,7 @@
 // @generated
 // This file was automatically generated and should not be edited.
 
-import { UserQuery } from "./../../types/graphql-global-types";
+import { UserQuery, Params } from "./../../types/graphql-global-types";
 
 // ====================================================
 // GraphQL query operation: GetUser
@@ -27,6 +27,19 @@ export interface GetUser_user_posts {
   id: string;
 }
 
+export interface GetUser_user_postsUser_image {
+  __typename: "Image";
+  urlXL: string;
+}
+
+export interface GetUser_user_postsUser {
+  __typename: "Post";
+  text: string;
+  id: string;
+  title: string;
+  image: GetUser_user_postsUser_image | null;
+}
+
 export interface GetUser_user {
   __typename: "User";
   username: string;
@@ -35,6 +48,7 @@ export interface GetUser_user {
   numberOfPosts: number;
   profileImage: GetUser_user_profileImage | null;
   posts: GetUser_user_posts[];
+  postsUser: GetUser_user_postsUser[];
 }
 
 export interface GetUser {
@@ -43,4 +57,5 @@ export interface GetUser {
 
 export interface GetUserVariables {
   query: UserQuery;
+  params?: Params | null;
 }

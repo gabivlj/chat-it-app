@@ -134,7 +134,7 @@ export default function ProfileCard({ user }: Props) {
               'Posts',
               () => (
                 <>
-                  <PostsProfile posts={user.posts} />
+                  <PostsProfile posts={user.postsUser} />
                 </>
               ),
             ],

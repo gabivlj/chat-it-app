@@ -33,6 +33,14 @@ func (p *messageMongo) Domain() *domain.Message {
 	return &domain.Message{Text: p.Text, UserID: p.UserID, CreatedAt: p.CreatedAt, PostID: p.PostID, ID: p.ID.Hex()}
 }
 
+func mapMessages(m []messageMongo) []*domain.Message {
+	messages := make([]*domain.Message, 0, len(m))
+	for idx := range m {
+		messages = append(messages, m[idx].Domain())
+	}
+	return messages
+}
+
 func newMessageRepository(db *mongo.Database, client *mongo.Client) *MessageRepository {
 	coll := db.Collection("messages")
 	name, err := coll.Indexes().CreateOne(context.Background(), mongo.IndexModel{Keys: bson.M{"userId": 1}})
@@ -60,11 +68,24 @@ func (m *MessageRepository) GetMessages(ctx context.Context, postID string, para
 	if err != nil {
 		return nil, err
 	}
-	messages := make([]*domain.Message, 0, len(mongoMessages))
-	for idx := range mongoMessages {
-		messages = append(messages, mongoMessages[idx].Domain())
+	return mapMessages(mongoMessages), nil
+}
+
+// GetMessagesUsers loads the messages of an user in a paginated way (No dataloaden)
+func (m *MessageRepository) GetMessagesUsers(ctx context.Context, params *model.Params, users ...string) ([]*domain.Message, error) {
+	options, query, err := parsePagination(params)
+	if err != nil {
+		return nil, err
 	}
-	return messages, nil
+	query["userId"] = bson.M{"$in": users}
+	options.Sort = constants.SortDescendingCreatedAt
+	results, err := m.messagesCollection.Find(ctx, query, options)
+	mongoMessages := []messageMongo{}
+	err = results.All(ctx, &mongoMessages)
+	if err != nil {
+		return nil, err
+	}
+	return mapMessages(mongoMessages), nil
 }
 
 // SaveMessage saves the message in the database

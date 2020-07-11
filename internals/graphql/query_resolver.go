@@ -7,6 +7,7 @@ import (
 
 	"github.com/gabivlj/chat-it/internals/domain"
 	"github.com/gabivlj/chat-it/internals/graphql/model"
+	"github.com/gabivlj/chat-it/internals/middleware"
 )
 
 func (r *queryResolver) Users(ctx context.Context) ([]*domain.User, error) {
@@ -45,4 +46,9 @@ func (r *queryResolver) Posts(ctx context.Context, params *model.Params) ([]*dom
 
 func (r *queryResolver) Post(ctx context.Context, id string) (*domain.Post, error) {
 	return r.postRepo.GetPost(ctx, id)
+}
+
+func (r *queryResolver) Loged(ctx context.Context) (*model.Loged, error) {
+	user, _ := middleware.GetUser(ctx)
+	return &model.Loged{User: user, Loged: user != nil}, nil
 }

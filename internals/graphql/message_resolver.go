@@ -16,9 +16,20 @@ func (r *messageResolver) User(ctx context.Context, obj *domain.Message) (*domai
 
 // Warning, we shouldn't really use this
 func (r *messageResolver) Post(ctx context.Context, obj *domain.Message) (*domain.Post, error) {
-	if obj.Post == nil {
-		return r.postRepo.GetPost(ctx, obj.PostID)
-	}
+	// if obj.Post != nil {
+	// 	return obj.Post, nil
+	// }
+	// elements, err := middleware.DataLoaderPost(ctx).Load(obj.UserID)
+	// if err != nil {
+	// 	return nil, err
+	// }
+	// var postToChoose *domain.Post = nil
+	// for i := range elements {
+	// 	if elements[i].ID == obj.PostID {
+	// 		postToChoose = elements[i]
+	// 		break
+	// 	}
+	// }
 
-	return obj.Post, nil
+	return middleware.DataLoaderSinglePost(ctx).Load(obj.PostID)
 }

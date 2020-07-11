@@ -108,10 +108,12 @@ type ComplexityRoot struct {
 	}
 
 	User struct {
+		CommentsUser     func(childComplexity int, params *model.Params) int
 		ID               func(childComplexity int) int
 		NumberOfComments func(childComplexity int) int
 		NumberOfPosts    func(childComplexity int) int
 		Posts            func(childComplexity int) int
+		PostsUser        func(childComplexity int, params *model.Params) int
 		ProfileImage     func(childComplexity int) int
 		Username         func(childComplexity int) int
 	}
@@ -164,6 +166,8 @@ type UserResolver interface {
 	ProfileImage(ctx context.Context, obj *domain.User) (*domain.Image, error)
 	NumberOfPosts(ctx context.Context, obj *domain.User) (int, error)
 	NumberOfComments(ctx context.Context, obj *domain.User) (int, error)
+	PostsUser(ctx context.Context, obj *domain.User, params *model.Params) ([]*domain.Post, error)
+	CommentsUser(ctx context.Context, obj *domain.User, params *model.Params) ([]*domain.Message, error)
 }
 
 type executableSchema struct {
@@ -491,6 +495,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Subscription.NewMessage(childComplexity, args["postId"].(string)), true
 
+	case "User.commentsUser":
+		if e.complexity.User.CommentsUser == nil {
+			break
+		}
+
+		args, err := ec.field_User_commentsUser_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.User.CommentsUser(childComplexity, args["params"].(*model.Params)), true
+
 	case "User.id":
 		if e.complexity.User.ID == nil {
 			break
@@ -518,6 +534,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.User.Posts(childComplexity), true
+
+	case "User.postsUser":
+		if e.complexity.User.PostsUser == nil {
+			break
+		}
+
+		args, err := ec.field_User_postsUser_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.User.PostsUser(childComplexity, args["params"].(*model.Params)), true
 
 	case "User.profileImage":
 		if e.complexity.User.ProfileImage == nil {
@@ -637,6 +665,8 @@ var sources = []*ast.Source{
   profileImage: Image
   numberOfPosts: Int!
   numberOfComments: Int!
+  postsUser(params: Params): [Post!]!
+  commentsUser(params: Params): [Message!]!
 }
 
 type Post {
@@ -978,6 +1008,34 @@ func (ec *executionContext) field_Subscription_newMessage_args(ctx context.Conte
 		}
 	}
 	args["postId"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_User_commentsUser_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 *model.Params
+	if tmp, ok := rawArgs["params"]; ok {
+		arg0, err = ec.unmarshalOParams2ᚖgithubᚗcomᚋgabivljᚋchatᚑitᚋinternalsᚋgraphqlᚋmodelᚐParams(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["params"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_User_postsUser_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 *model.Params
+	if tmp, ok := rawArgs["params"]; ok {
+		arg0, err = ec.unmarshalOParams2ᚖgithubᚗcomᚋgabivljᚋchatᚑitᚋinternalsᚋgraphqlᚋmodelᚐParams(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["params"] = arg0
 	return args, nil
 }
 
@@ -2601,6 +2659,88 @@ func (ec *executionContext) _User_numberOfComments(ctx context.Context, field gr
 	res := resTmp.(int)
 	fc.Result = res
 	return ec.marshalNInt2int(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _User_postsUser(ctx context.Context, field graphql.CollectedField, obj *domain.User) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "User",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_User_postsUser_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	fc.Args = args
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.User().PostsUser(rctx, obj, args["params"].(*model.Params))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]*domain.Post)
+	fc.Result = res
+	return ec.marshalNPost2ᚕᚖgithubᚗcomᚋgabivljᚋchatᚑitᚋinternalsᚋdomainᚐPostᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _User_commentsUser(ctx context.Context, field graphql.CollectedField, obj *domain.User) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "User",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_User_commentsUser_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	fc.Args = args
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.User().CommentsUser(rctx, obj, args["params"].(*model.Params))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]*domain.Message)
+	fc.Result = res
+	return ec.marshalNMessage2ᚕᚖgithubᚗcomᚋgabivljᚋchatᚑitᚋinternalsᚋdomainᚐMessageᚄ(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _UserSession_user(ctx context.Context, field graphql.CollectedField, obj *model.UserSession) (ret graphql.Marshaler) {
@@ -4386,6 +4526,34 @@ func (ec *executionContext) _User(ctx context.Context, sel ast.SelectionSet, obj
 					}
 				}()
 				res = ec._User_numberOfComments(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			})
+		case "postsUser":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._User_postsUser(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			})
+		case "commentsUser":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._User_commentsUser(ctx, field, obj)
 				if res == graphql.Null {
 					atomic.AddUint32(&invalids, 1)
 				}

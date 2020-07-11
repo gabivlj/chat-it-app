@@ -13,6 +13,7 @@ import Communication from '../components/Icons/Communication';
 import { withRouter, RouteComponentProps } from 'react-router';
 import PersonPlus from '../components/Icons/PersonPlus';
 import PersonKey from '../components/Icons/PersonKey';
+import canFetchMore from '../utils/canFetchMore';
 
 function Home({ history }: RouteComponentProps) {
   const logedData = useQuery<isLogged>(CHECK_LOGED_LOCAL);
@@ -22,33 +23,30 @@ function Home({ history }: RouteComponentProps) {
     {
       variables: {
         params: {
-          limit: 5
-        }
-      }
+          limit: 5,
+        },
+      },
     }
   );
   useEffect(() => {
     if (!data) return;
     const fetchMoreScroll = () => {
-      const d = document.documentElement;
-      const offset = d.scrollTop + window.innerHeight;
-      const height = d.offsetHeight;
-      if (offset !== height || loading || !data) {
+      if (!canFetchMore({ loading, data })) {
         return;
       }
       fetchMore({
         variables: {
           params: {
             limit: 5,
-            before: data.posts[data.posts.length - 1].id
-          }
+            before: data.posts[data.posts.length - 1].id,
+          },
         },
         updateQuery: (prev: any, { fetchMoreResult }) => {
           if (!fetchMoreResult) return prev;
           return Object.assign({}, prev, {
-            posts: [...prev.posts, ...fetchMoreResult.posts]
+            posts: [...prev.posts, ...fetchMoreResult.posts],
           });
-        }
+        },
       });
     };
     window.addEventListener('scroll', fetchMoreScroll);
@@ -65,7 +63,7 @@ function Home({ history }: RouteComponentProps) {
           <Button
             icon={<Communication />}
             text="Create a post"
-            onClick={() => setShow(prev => !prev)}
+            onClick={() => setShow((prev) => !prev)}
           />
         ) : (
           <>
