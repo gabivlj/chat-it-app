@@ -4,23 +4,24 @@ import { useMutation } from '@apollo/react-hooks';
 import {
   LOG_USER_MUTATION,
   LOG_USER_LOCAL,
-  LOG_USER_LOCAL_SESSION
+  LOG_USER_LOCAL_SESSION,
 } from '../../queries/user_queries';
 import '../../App.css';
 import { LoginError, ParseError } from '../../utils/error';
 import Input from '../Inputs/Input';
 import ButtonForm from '../Inputs/ButtonForm';
+import { encrypt } from '../../utils/stringEncrypt';
 
 export default function LoginForm() {
   const [inputState, setInputState] = useState({ username: '', password: '' });
   const [errorState, setErrorState] = useState({
     username: '',
-    password: ''
+    password: '',
   } as LoginError);
   function changeState(e: React.FormEvent<HTMLInputElement>) {
     setInputState({
       ...inputState,
-      [e.currentTarget.name]: e.currentTarget.value
+      [e.currentTarget.name]: e.currentTarget.value,
     });
     e.persist();
   }
@@ -30,18 +31,18 @@ export default function LoginForm() {
       variables: {
         formParameters: {
           username: inputState.username,
-          password: inputState.password
-        }
+          password: inputState.password,
+        },
       },
       errorPolicy: 'all',
-      onError: err => {
+      onError: (err) => {
         setErrorState(ParseError.parseLoginError(err));
-      }
+      },
     }
   );
   // Local
   const [logUserLocally] = useMutation(LOG_USER_LOCAL_SESSION, {
-    variables: { user: result.data ? result.data.logUser : null }
+    variables: { user: result.data ? result.data.logUser : null },
   });
   useEffect(() => {
     if (result.loading || !result.data) return;
@@ -87,9 +88,16 @@ export default function LoginForm() {
           </div>
           <div className="flex items-center justify-between">
             <ButtonForm
-              onClick={e => {
+              onClick={(e) => {
                 e.preventDefault();
-                login();
+                login({
+                  variables: {
+                    formParameters: {
+                      username: inputState.username,
+                      password: encrypt(inputState.password),
+                    },
+                  },
+                });
               }}
             >
               Sign In

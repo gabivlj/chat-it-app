@@ -3,11 +3,15 @@ package repository
 import (
 	"context"
 	"crypto/rand"
+	"crypto/rsa"
+	"crypto/x509"
 	"encoding/base64"
 	"encoding/json"
+	"encoding/pem"
 	"errors"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"log"
 	"strings"
 	"time"
@@ -28,6 +32,7 @@ type UserRepository struct {
 	userCollection *mongo.Collection
 	Sessions       *freecache.Cache
 	fileUpl        *CloudStorageImages
+	rsaKey         *rsa.PrivateKey
 	// (NOTE) (GABI) : Do pagination with { _id : { $gt: otherid }}
 }
 
@@ -57,7 +62,19 @@ func mongoUser(u *domain.User) *userMongo {
 
 // NewUsersRepo .
 func newUsersRepo(db *mongo.Database, client *mongo.Client, fileUpl *CloudStorageImages) *UserRepository {
-	return &UserRepository{client: client, userCollection: db.Collection("users"), db: db, Sessions: freecache.NewCache(1024 * 1024 * 10000), fileUpl: fileUpl}
+	key, err := ioutil.ReadFile("rsa.pem")
+	if err != nil {
+		panic("NO KEY")
+	}
+	privateKeyDecoded, _ := pem.Decode(key)
+	if privateKeyDecoded == nil {
+		panic("ERROR DECODING KEY")
+	}
+	privateKey, err := x509.ParsePKCS1PrivateKey(privateKeyDecoded.Bytes)
+	if err != nil {
+		panic(err)
+	}
+	return &UserRepository{client: client, userCollection: db.Collection("users"), db: db, Sessions: freecache.NewCache(1024 * 1024 * 10000), fileUpl: fileUpl, rsaKey: privateKey}
 }
 
 func (u *userMongo) Domain() *domain.User {
@@ -99,6 +116,11 @@ func (u *UserRepository) SaveUser(ctx context.Context, user *domain.User) (*doma
 
 // LogUser logs an user from the db and creates a session
 func (u *UserRepository) LogUser(ctx context.Context, user *domain.User) (*domain.User, string, error) {
+	passwordDecryptedRSA, errDecrypt := u.decrypt(user.Password)
+	fmt.Println(passwordDecryptedRSA)
+	if errDecrypt != nil {
+		return nil, "", errDecrypt
+	}
 	userMongo := mongoUser(user)
 	res := u.userCollection.FindOne(ctx, userMongo)
 	err := res.Decode(&userMongo)
@@ -108,7 +130,7 @@ func (u *UserRepository) LogUser(ctx context.Context, user *domain.User) (*domai
 	if userMongo.Username != user.Username {
 		return nil, "", errors.New("User not found")
 	}
-	if bcrypt.CompareHashAndPassword([]byte(userMongo.Password), []byte(user.Password)) != nil {
+	if bcrypt.CompareHashAndPassword([]byte(userMongo.Password), []byte(passwordDecryptedRSA)) != nil {
 		return nil, "", errors.New("Incorrect password")
 	}
 	user = userMongo.Domain()
@@ -222,4 +244,14 @@ func newSessionID() string {
 	}
 	return base64.URLEncoding.EncodeToString(b)
 
+}
+
+func (u *UserRepository) decrypt(encryptedData string) (string, error) {
+	data, err := base64.StdEncoding.DecodeString(encryptedData)
+	if err != nil {
+		return "", err
+	}
+	decrypted, err1 := rsa.DecryptPKCS1v15(rand.Reader, u.rsaKey, data)
+
+	return string(decrypted), err1
 }

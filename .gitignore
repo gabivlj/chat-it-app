@@ -9,3 +9,5 @@ init-mongo.js
 /server/node_modules
 server/node_modules
 ./server/node_modules
+*.pem
+*.key.ts
