@@ -83,28 +83,27 @@ func (u *userMongo) Domain() *domain.User {
 
 // SaveUser saves a user into mongo db
 func (u *UserRepository) SaveUser(ctx context.Context, user *domain.User) (*domain.User, string, error) {
-	passwordDecrypt, err := u.decrypt(user.Password)
-	if err != nil {
-		return nil, "", err
-	}
-	mongoU := mongoUser(user)
-	// Sanitize inputs and also copy the string because we don't want to modify it the user's one.
-	mongoU.Username = strings.TrimSpace(mongoU.Username)
-	usr := u.userCollection.FindOne(ctx, searchUserQuery(mongoU.Username))
-	if usr.Err() == nil {
-		return nil, "", fmt.Errorf("Error, the user already exists")
-	}
+
 	user.Username = strings.TrimSpace(user.Username)
 	if len(user.Username) < 2 || len(user.Username) > 16 {
 		return nil, "", fmt.Errorf("Username must be more than 1 character or less than 17")
 	}
+	passwordDecrypt, err := u.decrypt(user.Password)
+	if err != nil {
+		return nil, "", err
+	}
 	if len(passwordDecrypt) < 6 || len(passwordDecrypt) >= 60 {
 		return nil, "", fmt.Errorf("Error, password length must be more than 5 characters or less than 60")
+	}
+	usr := u.userCollection.FindOne(ctx, searchUserQuery(user.Username))
+	if usr.Err() != mongo.ErrNoDocuments {
+		return nil, "", fmt.Errorf("Error, the user already exists")
 	}
 	encryptedPass, err := bcrypt.GenerateFromPassword([]byte(passwordDecrypt), 14)
 	if err != nil {
 		return nil, "", err
 	}
+	mongoU := mongoUser(user)
 	mongoU.Password = string(encryptedPass)
 	result, err := u.userCollection.InsertOne(ctx, mongoU)
 	if err != nil {

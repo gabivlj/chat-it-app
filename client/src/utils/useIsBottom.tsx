@@ -7,7 +7,7 @@ export default function useIsBottom() {
       const d = document.documentElement;
       const offset = d.scrollTop + window.innerHeight;
       const height = d.offsetHeight;
-      return setIsBottom(offset === height);
+      return setIsBottom(offset >= height - 1);
     };
     window.addEventListener('scroll', checker);
     return () => window.removeEventListener('scroll', checker);

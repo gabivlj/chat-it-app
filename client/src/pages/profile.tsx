@@ -49,11 +49,13 @@ export default function Profile({ match }: Props) {
       variables: {
         paramsPost: {
           limit: 5,
-          before: postsUser[postsUser.length - 1].id,
+          before: postsUser.length ? postsUser[postsUser.length - 1].id : null,
         },
         paramsComments: {
           limit: 5,
-          before: commentsUser[commentsUser.length - 1].id,
+          before: commentsUser.length
+            ? commentsUser[commentsUser.length - 1].id
+            : null,
         },
       },
       updateQuery: (prev: any, { fetchMoreResult }) => {
