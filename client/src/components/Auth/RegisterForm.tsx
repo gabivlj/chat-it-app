@@ -4,19 +4,24 @@ import { useMutation } from '@apollo/react-hooks';
 import {
   LOG_USER_MUTATION,
   LOG_USER_LOCAL_SESSION,
+  REGISTER_USER_MUTATION,
 } from '../../queries/user_queries';
 import '../../App.css';
-import { LoginError, ParseError } from '../../utils/error';
+import { ParseError } from '../../utils/error';
 import Input from '../Inputs/Input';
 import ButtonForm from '../Inputs/ButtonForm';
 import { encrypt } from '../../utils/stringEncrypt';
+import {
+  registerUser,
+  registerUserVariables,
+} from '../../queries/types/registerUser';
 
-export default function LoginForm() {
+export default function RegisterForm() {
   const [inputState, setInputState] = useState({ username: '', password: '' });
   const [errorState, setErrorState] = useState({
     username: '',
     password: '',
-  } as LoginError);
+  });
   function changeState(e: React.FormEvent<HTMLInputElement>) {
     setInputState({
       ...inputState,
@@ -24,8 +29,8 @@ export default function LoginForm() {
     });
     e.persist();
   }
-  const [login, result] = useMutation<logUser, logUserVariables>(
-    LOG_USER_MUTATION,
+  const [login, result] = useMutation<registerUser, registerUserVariables>(
+    REGISTER_USER_MUTATION,
     {
       variables: {
         formParameters: {
@@ -35,13 +40,13 @@ export default function LoginForm() {
       },
       errorPolicy: 'all',
       onError: (err) => {
-        setErrorState(ParseError.parseLoginError(err));
+        // setErrorState(ParseError.parseLoginError(err));
       },
     }
   );
   // Local
   const [logUserLocally] = useMutation(LOG_USER_LOCAL_SESSION, {
-    variables: { user: result.data ? result.data.logUser : null },
+    variables: { user: result.data ? result.data.newUser : null },
   });
   useEffect(() => {
     if (result.loading || !result.data) return;
@@ -51,7 +56,7 @@ export default function LoginForm() {
     <div className="container lg:flex justify-center">
       <div className="">
         <h3 className="mt-64 text-3xl p-3">
-          Log in in chat-it, the reddit inspired realtime post chat! (Long
+          Register in chat-it, the reddit inspired realtime post chat! (Long
           advertisement)
         </h3>
       </div>
@@ -99,14 +104,8 @@ export default function LoginForm() {
                 });
               }}
             >
-              Sign In
+              Register
             </ButtonForm>
-            {/* <a
-              className="inline-block align-baseline font-bold text-sm text-blue-500 hover:text-blue-800"
-              href="#"
-            >
-              Forgot Password?
-            </a> */}
           </div>
         </form>
         <p className="text-center text-gray-500 text-xs">

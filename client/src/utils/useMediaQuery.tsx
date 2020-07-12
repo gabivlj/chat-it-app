@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 
 export const MediaQueries = {
   Small: '(min-width: 400px)',

@@ -3,6 +3,8 @@
 // @generated
 // This file was automatically generated and should not be edited.
 
+import { FormLogInRegister } from "./../../types/graphql-global-types";
+
 // ====================================================
 // GraphQL mutation operation: registerUser
 // ====================================================
@@ -24,6 +26,5 @@ export interface registerUser {
 }
 
 export interface registerUserVariables {
-  username?: string | null;
-  password?: string | null;
+  formParameters?: FormLogInRegister | null;
 }

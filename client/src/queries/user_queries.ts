@@ -55,8 +55,8 @@ export const LOG_USER_LOCAL_SESSION = gql`
 /******** */
 
 export const REGISTER_USER_MUTATION = gql`
-  mutation registerUser($username: String, $password: String) {
-    newUser(parameters: { username: $username, password: $password }) {
+  mutation registerUser($formParameters: FormLogInRegister) {
+    newUser(parameters: $formParameters) {
       user {
         username
         id

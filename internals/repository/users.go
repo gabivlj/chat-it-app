@@ -57,7 +57,7 @@ func mongoUser(u *domain.User) *userMongo {
 			id = ids
 		}
 	}
-	return &userMongo{Username: u.Username, ID: id, ImageURL: u.ImageURL}
+	return &userMongo{Username: u.Username + "", ID: id, ImageURL: u.ImageURL}
 }
 
 // NewUsersRepo .
@@ -83,9 +83,14 @@ func (u *userMongo) Domain() *domain.User {
 
 // SaveUser saves a user into mongo db
 func (u *UserRepository) SaveUser(ctx context.Context, user *domain.User) (*domain.User, string, error) {
+	passwordDecrypt, err := u.decrypt(user.Password)
+	if err != nil {
+		return nil, "", err
+	}
 	mongoU := mongoUser(user)
-	// Sanitize inputs
-	usr := u.userCollection.FindOne(ctx, mongoU)
+	// Sanitize inputs and also copy the string because we don't want to modify it the user's one.
+	mongoU.Username = strings.TrimSpace(mongoU.Username)
+	usr := u.userCollection.FindOne(ctx, searchUserQuery(mongoU.Username))
 	if usr.Err() == nil {
 		return nil, "", fmt.Errorf("Error, the user already exists")
 	}
@@ -93,10 +98,10 @@ func (u *UserRepository) SaveUser(ctx context.Context, user *domain.User) (*doma
 	if len(user.Username) < 2 || len(user.Username) > 16 {
 		return nil, "", fmt.Errorf("Username must be more than 1 character or less than 17")
 	}
-	if len(user.Password) < 6 || len(user.Password) >= 60 {
+	if len(passwordDecrypt) < 6 || len(passwordDecrypt) >= 60 {
 		return nil, "", fmt.Errorf("Error, password length must be more than 5 characters or less than 60")
 	}
-	encryptedPass, err := bcrypt.GenerateFromPassword([]byte(user.Password), 14)
+	encryptedPass, err := bcrypt.GenerateFromPassword([]byte(passwordDecrypt), 14)
 	if err != nil {
 		return nil, "", err
 	}
@@ -117,18 +122,16 @@ func (u *UserRepository) SaveUser(ctx context.Context, user *domain.User) (*doma
 // LogUser logs an user from the db and creates a session
 func (u *UserRepository) LogUser(ctx context.Context, user *domain.User) (*domain.User, string, error) {
 	passwordDecryptedRSA, errDecrypt := u.decrypt(user.Password)
-	fmt.Println(passwordDecryptedRSA)
 	if errDecrypt != nil {
 		return nil, "", errDecrypt
 	}
+	// trimmed
+	user.Username = strings.TrimSpace(user.Username)
+	res := u.userCollection.FindOne(ctx, searchUserQuery(user.Username))
 	userMongo := mongoUser(user)
-	res := u.userCollection.FindOne(ctx, userMongo)
 	err := res.Decode(&userMongo)
 	if err != nil {
 		return nil, "", err
-	}
-	if userMongo.Username != user.Username {
-		return nil, "", errors.New("User not found")
 	}
 	if bcrypt.CompareHashAndPassword([]byte(userMongo.Password), []byte(passwordDecryptedRSA)) != nil {
 		return nil, "", errors.New("Incorrect password")
@@ -254,4 +257,8 @@ func (u *UserRepository) decrypt(encryptedData string) (string, error) {
 	decrypted, err1 := rsa.DecryptPKCS1v15(rand.Reader, u.rsaKey, data)
 
 	return string(decrypted), err1
+}
+
+func searchUserQuery(username string) bson.M {
+	return bson.M{"username": bson.M{"$regex": username, "$options": "i"}}
 }

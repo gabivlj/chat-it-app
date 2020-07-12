@@ -8,6 +8,7 @@ import { LOG_USER_LOCAL } from '../queries/user_queries';
 import Profile from '../pages/profile';
 import Post from '../pages/post';
 import Navbar from './navbar';
+import Register from '../pages/register';
 
 type Props = {
   loged: isLogged | undefined;
@@ -16,7 +17,7 @@ type Props = {
 
 export default function Routes({ loading, loged }: Props) {
   const [logUser] = useMutation(LOG_USER_LOCAL, {
-    variables: { user: loged ? loged.loged.user : null }
+    variables: { user: loged ? loged.loged.user : null },
   });
   useEffect(() => {
     logUser();
@@ -32,6 +33,7 @@ export default function Routes({ loading, loged }: Props) {
             <Route exact path="/post/:id" component={Post} />
             <Route exact path="/user/:username" component={Profile} />
             <Route exact path="/login" component={Login} />
+            <Route exact path="/signup" component={Register} />
             <Route exact path="/" component={Home} />
           </>
         )}

@@ -1,9 +1,9 @@
 import React from 'react';
-import { GetUser_user_posts } from '../../queries/types/GetUser';
+import { GetUser_user_postsUser } from '../../queries/types/GetUser';
 import { Link } from 'react-router-dom';
 
 type Props = {
-  post: GetUser_user_posts;
+  post: GetUser_user_postsUser;
 };
 
 export default function Post({ post }: Props) {

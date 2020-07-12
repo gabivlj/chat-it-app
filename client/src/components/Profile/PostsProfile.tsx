@@ -1,9 +1,9 @@
 import React from 'react';
 import Post from '../Posts/Post';
-import { GetUser_user_posts } from '../../queries/types/GetUser';
+import { GetUser_user_postsUser } from '../../queries/types/GetUser';
 
 type Props = {
-  posts: GetUser_user_posts[];
+  posts: GetUser_user_postsUser[];
 };
 export default function PostsProfile({ posts }: Props) {
   return (

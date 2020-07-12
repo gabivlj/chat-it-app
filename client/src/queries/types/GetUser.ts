@@ -14,19 +14,6 @@ export interface GetUser_user_profileImage {
   urlXL: string;
 }
 
-export interface GetUser_user_posts_image {
-  __typename: "Image";
-  urlXL: string;
-}
-
-export interface GetUser_user_posts {
-  __typename: "Post";
-  text: string;
-  image: GetUser_user_posts_image | null;
-  title: string;
-  id: string;
-}
-
 export interface GetUser_user_postsUser_image {
   __typename: "Image";
   urlXL: string;
@@ -67,7 +54,6 @@ export interface GetUser_user {
   numberOfComments: number;
   numberOfPosts: number;
   profileImage: GetUser_user_profileImage | null;
-  posts: GetUser_user_posts[];
   postsUser: GetUser_user_postsUser[];
   commentsUser: GetUser_user_commentsUser[];
 }
