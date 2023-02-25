@@ -10,8 +10,7 @@ require (
 	github.com/gofrs/uuid v3.3.0+incompatible
 	github.com/gorilla/websocket v1.2.0
 	github.com/joho/godotenv v1.3.0
-	github.com/stretchr/testify v1.4.0
 	github.com/vektah/gqlparser/v2 v2.0.1
 	go.mongodb.org/mongo-driver v1.3.3
-	golang.org/x/crypto v0.0.0-20191011191535-87dc89f01550
+	golang.org/x/crypto v0.1.0
 )
